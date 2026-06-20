@@ -27,33 +27,6 @@ An advanced robotic manipulation dashboard for peg-in-hole insertion, inclined s
 </div>
 
 ---
-
-## Live Performance Gallery
-
-The repository includes captured simulation views for every major task and workbench.
-
-| Main Simulation | Normal Surface |
-|---|---|
-| ![Main Simulation](assets/screenshots/main-simulation-dashboard.jpg) | ![Normal Surface](assets/screenshots/normal-surface-live.jpg) |
-
-| Inclined 15 deg | Inclined 30 deg |
-|---|---|
-| ![Inclined 15](assets/screenshots/inclined-15-live.jpg) | ![Inclined 30](assets/screenshots/inclined-30-live.jpg) |
-
-| Inclined 45 deg | Sculpture Surface |
-|---|---|
-| ![Inclined 45](assets/screenshots/inclined-45-live.jpg) | ![Sculpture Surface](assets/screenshots/sculpture-surface-live.jpg) |
-
-| Color Sort | Conjugate Grasp |
-|---|---|
-| ![Color Sort](assets/screenshots/color-sort-live.jpg) | ![Conjugate Grasp](assets/screenshots/conjugate-grasp-live.jpg) |
-
-| Double Workbench | ARIA AI |
-|---|---|
-| ![Double Workbench](assets/screenshots/double-workbench-live.jpg) | ![ARIA AI](assets/screenshots/aria-ai-assistant.png) |
-
----
-
 ## What This Project Does
 
 This project simulates a Franka Panda-style robotic arm performing industrial manipulation tasks inside a modern Flask dashboard. The robot performs surface-aware peg-in-hole insertion, monitors grasp quality, detects slip, tracks force and torque, runs vision-based color sorting, and exposes the complete run through live dashboards and downloadable reports.
