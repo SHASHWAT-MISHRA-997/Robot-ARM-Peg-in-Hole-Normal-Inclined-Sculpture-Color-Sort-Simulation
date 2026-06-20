@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Sorting Workbench</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --accent: #cc66ff;
+            --accent2: #00d4ff;
+            --green: #00ff88;
+            --warn: #ffcc00;
+            --danger: #ff4b2b;
+            --orange: #ff8800;
+            --blue: #0055ff;
+            --clr-green: #00cc33;
+            --glass: rgba(12, 12, 18, 0.72);
+            --glass-light: rgba(20, 20, 30, 0.55);
+            --border: rgba(204,102,255,0.25);
+            --border-light: rgba(255,255,255,0.08);
+            --radius: 12px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body, html { width: 100%; height: 100%; background: #000; color: #e0e0e0; font-family: 'Segoe UI', system-ui, sans-serif; overflow: hidden; }
+
+        .cs-layout { width: 100vw; height: 100vh; display: grid; grid-template-rows: auto auto 1fr auto; }
+        .cs-bench-nav { display:flex; gap:10px; flex-wrap:wrap; padding:10px 24px 0; background:var(--glass); backdrop-filter:blur(20px); }
+        .cs-bench-link {
+            text-decoration:none;
+            padding:9px 14px;
+            border-radius:999px;
+            border:1px solid rgba(255,255,255,0.08);
+            background:rgba(255,255,255,0.03);
+            color:#d1d3df;
+            font-size:0.74rem;
+            font-weight:800;
+            letter-spacing:0.4px;
+            transition:transform 0.16s ease,border-color 0.16s ease,box-shadow 0.16s ease,color 0.16s ease,background 0.16s ease;
+        }
+        .cs-bench-link:hover {
+            transform:translateY(-1px);
+            color:#fff;
+            border-color:rgba(204,102,255,0.30);
+            box-shadow:0 0 16px rgba(204,102,255,0.15);
+            background:rgba(204,102,255,0.06);
+        }
+        .cs-bench-link.active {
+            color:#14071c;
+            background:linear-gradient(135deg,#cc66ff,#f0b4ff);
+            border-color:transparent;
+            box-shadow:0 10px 22px rgba(204,102,255,0.18);
+        }
+
+        /* Header */
+        .cs-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 24px; background: var(--glass); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); }
+        .cs-header-left { display: flex; align-items: center; gap: 16px; }
+        .cs-header h1 { color: var(--accent); font-size: 1.05rem; letter-spacing: 2px; font-weight: 900; }
+        .cs-back-btn { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.12); color: #aaa; padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 0.78rem; font-weight: 600; text-decoration: none; transition: all 0.25s; }
+        .cs-back-btn:hover { background: rgba(0,212,255,0.12); color: #00d4ff; border-color: rgba(0,212,255,0.4); }
+        .cs-header-actions { display: flex; gap: 10px; align-items: center; }
+        .cs-help-orb { position: relative; width: 44px; height: 44px; border: none; border-radius: 50%; background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.30), rgba(204,102,255,0.18) 35%, rgba(11,12,20,0.96) 72%); color: #f8ecff; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 10px 28px rgba(0,0,0,0.34), inset 0 0 18px rgba(204,102,255,0.18); transition: transform 0.18s ease, box-shadow 0.18s ease; overflow: visible; }
+        .cs-help-orb::before { content: ''; position: absolute; inset: -6px; border-radius: 50%; border: 1px solid rgba(204,102,255,0.2); border-top-color: rgba(255,255,255,0.92); animation: csGuideSpin 4.5s linear infinite; }
+        .cs-help-orb::after { content: ''; position: absolute; inset: -12px; border-radius: 50%; background: radial-gradient(circle, rgba(204,102,255,0.22), rgba(204,102,255,0) 68%); animation: csGuidePulse 1.7s ease-in-out infinite; }
+        .cs-help-orb span { position: relative; z-index: 1; font-size: 15px; font-weight: 900; letter-spacing: 0.4px; text-shadow: 0 0 12px rgba(255,255,255,0.24); }
+        .cs-help-orb:hover { transform: translateY(-1px) scale(1.04); box-shadow: 0 0 18px rgba(204,102,255,0.26), 0 0 30px rgba(0,212,255,0.18), inset 0 0 22px rgba(204,102,255,0.2); }
+        .cs-start-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(204,102,255,0.15); border: 1px solid rgba(204,102,255,0.4); color: #cc66ff; padding: 8px 22px; border-radius: 8px; cursor: pointer; font-weight: 800; font-size: 0.82rem; letter-spacing: 1px; transition: all 0.25s; }
+        .cs-start-btn:hover { background: rgba(204,102,255,0.25); border-color: #cc66ff; transform: translateY(-1px); }
+        .cs-start-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+        .cs-reset-btn { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,75,43,0.12); border: 1px solid rgba(255,75,43,0.3); color: #ff4b2b; padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 0.78rem; font-weight: 700; transition: all 0.25s; }
+        .cs-reset-btn:hover { background: rgba(255,75,43,0.2); }
+        .cs-mute-btn { display: inline-flex; align-items: center; gap: 6px; background: rgba(0,212,255,0.10); border: 1px solid rgba(0,212,255,0.3); color: #00d4ff; padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 0.78rem; font-weight: 700; transition: all 0.25s; }
+        .cs-mute-btn:hover { background: rgba(0,212,255,0.2); }
+        .cs-mute-btn.muted { color: #ff4b2b; border-color: rgba(255,75,43,0.4); background: rgba(255,75,43,0.1); }
+
+        /* Video */
+        .cs-video { background: #000; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .cs-video img { width: 100%; height: 100%; object-fit: contain; }
+        .cs-video-badge { position: absolute; top: 12px; left: 12px; display: flex; gap: 6px; z-index: 10; }
+        .cs-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 16px; font-size: 0.58rem; font-weight: 700; letter-spacing: 0.7px; text-transform: uppercase; backdrop-filter: blur(6px); }
+        .cs-badge-vision { background: rgba(0,212,255,0.12); color: #00d4ff; border: 1px solid rgba(0,212,255,0.4); }
+        .cs-badge-sort { background: rgba(204,102,255,0.12); color: #cc66ff; border: 1px solid rgba(204,102,255,0.4); }
+        .cs-video-state { position: absolute; bottom: 12px; right: 12px; display: flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 8px; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); border: 1px solid rgba(204,102,255,0.3); font-size: 0.72rem; font-weight: 800; color: var(--accent); letter-spacing: 1px; z-index: 10; }
+        .cs-video-state .pulse { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 8px var(--accent); animation: cs-pulse 2s infinite; }
+        @keyframes cs-pulse { 0%,100%{opacity:0.4} 50%{opacity:1} }
+        .cs-current-color { position: absolute; bottom: 12px; left: 12px; display: none; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 8px; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.15); font-size: 0.78rem; font-weight: 800; letter-spacing: 1px; z-index: 10; }
+        .cs-current-color.visible { display: flex; }
+        .cs-current-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); }
+        .cs-subtitle-overlay { position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%); max-width: 80%; z-index: 20; pointer-events: none; }
+        .cs-subtitle { background: rgba(0,0,0,0.85); backdrop-filter: blur(12px); border: 1px solid rgba(204,102,255,0.35); border-radius: 10px; padding: 10px 18px; font-size: 0.82rem; font-weight: 600; color: #e8e8e8; text-align: center; display: none; animation: subtitleFadeIn 0.3s ease; }
+        .cs-subtitle.visible { display: block; }
+        @keyframes subtitleFadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+        /* Bottom */
+        .cs-bottom { background: var(--glass); backdrop-filter: blur(20px); border-top: 1px solid var(--border-light); padding: 10px 24px; display: flex; flex-direction: column; gap: 10px; }
+        .cs-role-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+        .cs-role-card { padding: 10px 12px; border-radius: 10px; background: linear-gradient(180deg, rgba(204,102,255,0.10), rgba(0,0,0,0.16)); border: 1px solid rgba(204,102,255,0.14); }
+        .cs-role-k { font-size: 0.54rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #e0a6ff; margin-bottom: 5px; }
+        .cs-role-v { font-size: 0.7rem; line-height: 1.45; color: #d6d8dd; }
+        .cs-status-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+        .cs-mode-badge { padding: 4px 12px; border-radius: 6px; font-size: 0.72rem; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; }
+        .cs-mode-badge.inactive { background: rgba(100,100,100,0.2); color: #888; border: 1px solid #555; }
+        .cs-mode-badge.sorting { background: rgba(0,255,150,0.12); color: #00ff96; border: 1px solid rgba(0,255,150,0.4); animation: cs-pulse 1.5s infinite; }
+        .cs-mode-badge.done { background: rgba(0,212,255,0.12); color: #00d4ff; border: 1px solid rgba(0,212,255,0.4); }
+        .cs-progress-text { font-size: 0.9rem; font-weight: 800; color: var(--accent); }
+        .cs-progress-bar { flex: 1; min-width: 120px; height: 8px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden; }
+        .cs-progress-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, #cc66ff, #00d4ff); transition: width 0.5s ease; width: 0; }
+        .cs-stats { display: flex; gap: 16px; font-size: 0.72rem; color: #aaa; }
+        .cs-stats span { color: #fff; font-weight: 700; }
+        .cs-text-fail { color: #ff6666; }
+
+        /* Pipeline */
+        .cs-pipeline { display: flex; align-items: center; gap: 0; padding: 8px 12px; border-radius: 8px; background: rgba(204,102,255,0.04); border: 1px solid rgba(204,102,255,0.12); overflow-x: auto; }
+        .cs-pipe-stage { display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 80px; padding: 6px 4px; border-radius: 6px; font-size: 0.58rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: #555; transition: all 0.3s; }
+        .cs-pipe-stage .stage-icon { font-size: 1rem; opacity: 0.5; }
+        .cs-pipe-stage.active { color: #00ff96; background: rgba(0,255,150,0.08); }
+        .cs-pipe-stage.active .stage-icon { opacity: 1; }
+        .cs-pipe-stage.completed { color: #00d4ff; }
+        .cs-pipe-stage.completed .stage-icon { opacity: 0.8; }
+        .cs-pipe-arrow { color: #444; font-size: 0.9rem; margin: 0 2px; }
+
+        /* Zone Cards */
+        .cs-zones { display: flex; gap: 10px; align-items: stretch; }
+        .cs-zone-card { flex: 1; border-radius: 10px; padding: 10px 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); transition: all 0.3s; display: flex; align-items: center; gap: 12px; }
+        .cs-zone-card.active-zone { border-color: rgba(0,255,150,0.5); box-shadow: 0 0 12px rgba(0,255,150,0.08); }
+        .cs-zone-card.done-zone { border-color: rgba(0,212,255,0.4); }
+        .cs-zone-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.15); flex-shrink: 0; }
+        .cs-zone-dot--orange { background: #ff8800; }
+        .cs-zone-dot--blue   { background: #0055ff; }
+        .cs-zone-dot--green  { background: #00cc33; }
+        .cs-zone-info { flex: 1; }
+        .cs-zone-name { font-size: 0.72rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
+        .cs-zone-name--orange { color: #ff8800; }
+        .cs-zone-name--blue   { color: #4488ff; }
+        .cs-zone-name--green  { color: #00cc33; }
+        .cs-zone-status { font-size: 0.58rem; color: #666; }
+        .cs-zone-icon { font-size: 1.1rem; font-weight: 900; }
+        .cs-zone-icon--orange { color: #ff8800; }
+        .cs-zone-icon--blue   { color: #4488ff; }
+        .cs-zone-icon--green  { color: #00cc33; }
+
+        /* ── DOWNLOAD MODAL ── */
+        #dl-modal { display:none; position:fixed; inset:0; z-index:300; align-items:center; justify-content:center; background:rgba(0,0,0,0.80); backdrop-filter:blur(10px); }
+        #dl-modal.show { display:flex; }
+        #dl-box { background:linear-gradient(145deg,#0d1420,#111a28); border:1px solid rgba(204,102,255,0.4); border-radius:18px; padding:28px 32px; max-width:420px; width:90%; text-align:center; box-shadow:0 24px 80px rgba(0,0,0,.9); animation:dlPop .35s cubic-bezier(.34,1.2,.64,1); }
+        @keyframes dlPop { from{opacity:0;transform:scale(.85)} to{opacity:1;transform:scale(1)} }
+        #dl-box h2 { color:#00ff88; font-size:1.1rem; margin-bottom:8px; letter-spacing:1px; }
+        #dl-box p  { color:#aaa; font-size:0.82rem; margin-bottom:22px; line-height:1.6; }
+        .dl-opts { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+        .dl-opt-btn { display:flex; flex-direction:column; align-items:center; gap:6px; padding:14px 22px; border-radius:12px; border:1px solid; cursor:pointer; font-size:0.78rem; font-weight:700; letter-spacing:.5px; transition:all 0.2s; background:transparent; }
+        .dl-opt-btn:hover { transform:translateY(-2px); }
+        .dl-opt-json { color:#00d4ff; border-color:rgba(0,212,255,.4); background:rgba(0,212,255,.07); }
+        .dl-opt-json:hover { background:rgba(0,212,255,.18); }
+        .dl-opt-txt  { color:#00ff88; border-color:rgba(0,255,136,.4); background:rgba(0,255,136,.07); }
+        .dl-opt-txt:hover  { background:rgba(0,255,136,.18); }
+        .dl-opt-icon { font-size:1.6rem; }
+        .dl-close { margin-top:18px; background:none; border:none; color:#555; font-size:0.75rem; cursor:pointer; text-decoration:underline; }
+        .dl-close:hover { color:#aaa; }
+
+        /* Snapshot strip */
+        #snap-strip { position:fixed; bottom:180px; right:14px; z-index:200; display:flex; flex-direction:column; gap:8px; pointer-events:none; max-height:260px; overflow:hidden; }
+        .snap-card { pointer-events:all; background:rgba(10,14,20,.92); border:1px solid rgba(0,255,136,.35); border-radius:10px; padding:8px 10px; display:flex; align-items:center; gap:10px; font-size:0.70rem; color:#aaa; animation:snapIn .35s cubic-bezier(.34,1.2,.64,1); max-width:260px; }
+        @keyframes snapIn { from{opacity:0;transform:translateX(60px)} to{opacity:1;transform:translateX(0)} }
+        .snap-thumb { width:52px; height:36px; border-radius:5px; object-fit:cover; border:1px solid #333; }
+        .snap-info b { color:#00ff88; font-size:0.74rem; }
+        .snap-dl { background:none; border:1px solid rgba(0,212,255,.4); color:#00d4ff; border-radius:6px; padding:3px 8px; font-size:0.65rem; cursor:pointer; margin-top:4px; }
+        .snap-dl:hover { background:rgba(0,212,255,.18); }
+        .cs-guide-overlay { display:none; position:fixed; inset:0; z-index:260; background:rgba(4,8,16,0.22); backdrop-filter:blur(6px); align-items:center; justify-content:center; padding:14px; }
+        .cs-guide-overlay.show { display:flex; }
+        .cs-guide-box { position:relative; width:min(980px,calc(100vw - 18px)); max-height:min(84vh,calc(100vh - 24px)); overflow:auto; border-radius:24px; border:1px solid rgba(204,102,255,0.2); background:linear-gradient(180deg,rgba(12,12,22,0.66),rgba(8,10,18,0.48)); box-shadow:0 24px 80px rgba(0,0,0,0.48); padding:20px 20px 18px; backdrop-filter:blur(18px); }
+        .cs-guide-box::before { content:''; position:absolute; inset:0; border-radius:24px; background:linear-gradient(120deg,rgba(255,255,255,0.08),rgba(255,255,255,0) 40%,rgba(204,102,255,0.06)); pointer-events:none; }
+        .cs-guide-head { display:flex; gap:14px; align-items:flex-start; justify-content:space-between; }
+        .cs-guide-copy { flex:1; }
+        .cs-guide-kicker { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:#f0bfff; font-weight:800; }
+        .cs-guide-title { margin-top:7px; font-size:25px; line-height:1.14; color:#fbf3ff; font-weight:800; max-width:740px; }
+        .cs-guide-sub { margin-top:10px; color:#d7d8e6; font-size:12px; line-height:1.7; max-width:760px; }
+        .cs-guide-close { width:38px; height:38px; border-radius:50%; border:1px solid rgba(255,255,255,0.10); background:none; color:#bbaaca; cursor:pointer; font-size:16px; flex-shrink:0; }
+        .cs-guide-close:hover { border-color:rgba(255,75,43,0.28); color:#ffb2a6; background:rgba(255,75,43,0.08); }
+        .cs-guide-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; margin-top:18px; }
+        .cs-guide-card { padding:16px; border-radius:18px; background:linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03)); border:1px solid rgba(255,255,255,0.08); min-height:176px; }
+        .cs-guide-num { width:40px; height:40px; border-radius:14px; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,rgba(204,102,255,0.24),rgba(0,212,255,0.16)); color:#fff8ff; font-size:17px; font-weight:800; box-shadow:inset 0 0 0 1px rgba(255,255,255,0.10),0 10px 22px rgba(0,0,0,0.18); }
+        .cs-guide-card h3 { margin-top:12px; color:#fbf5ff; font-size:14px; font-weight:800; }
+        .cs-guide-card p { margin-top:8px; color:#d6d7e5; font-size:12px; line-height:1.68; }
+        .cs-guide-tags { display:flex; flex-wrap:wrap; gap:8px; margin-top:11px; }
+        .cs-guide-tags span { padding:4px 8px; border-radius:999px; border:1px solid rgba(204,102,255,0.18); background:rgba(204,102,255,0.07); color:#efcbff; font-size:10px; }
+        @keyframes csGuideSpin { to { transform: rotate(360deg); } }
+        @keyframes csGuidePulse { 0%,100% { filter: brightness(1); box-shadow: 0 0 0 rgba(255,255,255,0); } 50% { filter: brightness(1.15); box-shadow: 0 0 16px rgba(255,255,255,0.18), 0 0 24px rgba(204,102,255,0.34), 0 0 30px rgba(0,212,255,0.22); } }
+
+        @media (max-width: 900px) {
+            html, body { overflow: auto; min-height: 100%; }
+            .cs-layout { height: auto; min-height: 100dvh; grid-template-rows: auto auto minmax(300px, 48dvh) auto; }
+            .cs-header { flex-direction: column; align-items: stretch; gap: 10px; padding: 10px 14px; }
+            .cs-header-left, .cs-header-actions { flex-wrap: wrap; }
+            .cs-header h1 { font-size: 0.92rem; letter-spacing: 1.2px; }
+            .cs-bench-nav { padding: 10px 14px 0; }
+            .cs-video { min-height: min(48dvh, 420px); padding: 6px 0; }
+            .cs-video img { object-fit: contain; object-position: center center; }
+            .cs-bottom { padding: 10px 14px 16px; }
+            .cs-role-grid, .cs-zones { flex-direction: column; display: flex; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- DOWNLOAD MODAL -->
+<div id="dl-modal">
+  <div id="dl-box">
+    <h2>&#x2705; Sort Task Complete!</h2>
+    <p id="dl-msg">Color sort task finished. Download simulation data:</p>
+    <div class="dl-opts">
+      <button class="dl-opt-btn dl-opt-json" onclick="downloadReport('json')">
+        <span class="dl-opt-icon">&#x1F4CA;</span>JSON Data
+      </button>
+      <button class="dl-opt-btn dl-opt-json" onclick="downloadReport('html')">
+        <span class="dl-opt-icon">&#x1F4C8;</span>HTML Dashboard
+      </button>
+      <button class="dl-opt-btn dl-opt-txt" onclick="downloadReport('txt')">
+        <span class="dl-opt-icon">&#x1F4C4;</span>Text Report
+      </button>
+      <button class="dl-opt-btn dl-opt-json" onclick="downloadReport('pdf')">
+        <span class="dl-opt-icon">&#x1F9FE;</span>PDF Report
+      </button>
+      <button class="dl-opt-btn dl-opt-txt" onclick="downloadReport('doc')">
+        <span class="dl-opt-icon">&#x1F4DD;</span>Word Report
+      </button>
+    </div>
+    <button class="dl-close" onclick="closeDlModal()">Dismiss</button>
+  </div>
+</div>
+
+<!-- SNAPSHOT STRIP -->
+<div id="snap-strip"></div>
+
+<div class="cs-guide-overlay" id="cs-guide" onclick="closeGuide(event)">
+  <div class="cs-guide-box" onclick="event.stopPropagation()">
+    <div class="cs-guide-head">
+      <div class="cs-guide-copy">
+        <div class="cs-guide-kicker">Cell Briefing</div>
+        <div class="cs-guide-title">Run conveyor-fed sorting with a transparent operator guide, live pipeline visibility, and the correct page-level controls.</div>
+        <div class="cs-guide-sub">This overlay stays translucent so the sorting cell remains visible in the background. Use the top header controls to start or reset the run, then follow the bottom pipeline, zone cards, and live state readout.</div>
+      </div>
+      <button class="cs-guide-close" type="button" onclick="closeGuide()" aria-label="Close guide">x</button>
+    </div>
+    <div class="cs-guide-grid">
+      <div class="cs-guide-card">
+        <div class="cs-guide-num">1</div>
+        <h3>Run Control</h3>
+        <p>Start the sorting cycle from the header. This page owns the sort execution directly, so you do not need a separate start panel in the main dashboard.</p>
+        <div class="cs-guide-tags"><span>Page-owned start</span><span>Header controls</span><span>Reset here</span></div>
+      </div>
+      <div class="cs-guide-card">
+        <div class="cs-guide-num">2</div>
+        <h3>Pipeline Trace</h3>
+        <p>Track pick, grasp, lift, scan, approach, insert, release, and home in the bottom sequence bar. The active stage glows while completed stages stay marked.</p>
+        <div class="cs-guide-tags"><span>Stage trace</span><span>Live progress</span><span>Home return</span></div>
+      </div>
+      <div class="cs-guide-card">
+        <div class="cs-guide-num">3</div>
+        <h3>Zone Readout</h3>
+        <p>The zone cards show which color is currently being targeted, which zones are already finished, and how much queue remains before the run completes.</p>
+        <div class="cs-guide-tags"><span>Color target</span><span>Queue status</span><span>Completion map</span></div>
+      </div>
+      <div class="cs-guide-card">
+        <div class="cs-guide-num">4</div>
+        <h3>When To Switch Cells</h3>
+        <p>Open the Double Robot Workbench when you want a mirrored second cell with separate robot assignment. Stay here when the focus is conveyor-driven color flow on a single page.</p>
+        <div class="cs-guide-tags"><span>Color cell</span><span>Double cell handoff</span><span>Scene clarity</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="cs-layout">
+    <!-- HEADER -->
+    <div class="cs-header">
+        <div class="cs-header-left">
+            <a class="cs-back-btn" href="/"><i class="fas fa-arrow-left"></i> Main Simulation</a>
+            <h1><i class="fas fa-palette"></i> &nbsp;COLOR SORTING WORKBENCH</h1>
+        </div>
+        <div class="cs-header-actions">
+            <button class="cs-help-orb" type="button" onclick="openGuide()" aria-label="Open guide"><span>i</span></button>
+            <button class="cs-mute-btn" id="cs-mute-btn" onclick="toggleMute()">
+                <i class="fas fa-volume-up" id="cs-mute-icon"></i> SOUND ON
+            </button>
+            <button class="cs-start-btn" id="cs-start-btn" onclick="startSort()">
+                <i class="fas fa-play"></i> START PEG-IN-HOLE
+            </button>
+            <button class="cs-reset-btn" onclick="resetSort()">
+                <i class="fas fa-undo"></i> RESET
+            </button>
+        </div>
+    </div>
+
+    <div class="cs-bench-nav" aria-label="Workbench navigation">
+        <a class="cs-bench-link" href="/">Main Dashboard</a>
+        <a class="cs-bench-link" href="/double">Double Robot</a>
+        <a class="cs-bench-link" href="/congruent_surface">Congruent Surface</a>
+        <a class="cs-bench-link active" href="/color_sort">Color Sort</a>
+    </div>
+
+    <!-- VIDEO -->
+    <div class="cs-video">
+        <div class="cs-video-badge">
+            <span class="cs-badge cs-badge-sort"><i class="fas fa-palette"></i> Color Sort</span>
+            <span class="cs-badge cs-badge-vision"><i class="fas fa-eye"></i> Vision Active</span>
+        </div>
+        <img src="/color_sort_feed" alt="Color Sort Feed">
+        <div class="cs-current-color" id="cs-current-color">
+            <div class="cs-current-dot" id="cs-current-dot"></div>
+            <span id="cs-current-label">&mdash;</span>
+        </div>
+        <div class="cs-video-state">
+            <div class="pulse"></div>
+            <span id="cs-state">IDLE</span>
+        </div>
+        <div class="cs-subtitle-overlay">
+            <div class="cs-subtitle" id="cs-subtitle">
+                <span class="sub-icon"><i class="fas fa-robot"></i></span>
+                <span id="cs-subtitle-text"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- BOTTOM -->
+    <div class="cs-bottom">
+        <div class="cs-role-grid">
+            <div class="cs-role-card">
+                <div class="cs-role-k">Peg-In-Hole Flow</div>
+                <div class="cs-role-v">Each conveyor peg is matched to the same color target hole and inserted with live progress tracking.</div>
+            </div>
+            <div class="cs-role-card">
+                <div class="cs-role-k">Queue Tracking</div>
+                <div class="cs-role-v">Current color, remaining queue, pipeline stage, and completion state stay visible throughout the run.</div>
+            </div>
+            <div class="cs-role-card">
+                <div class="cs-role-k">Sort Integrity</div>
+                <div class="cs-role-v">Queue order, current target, and insert completion stay visible so the conveyor sequence remains easy to verify.</div>
+            </div>
+        </div>
+        <div class="cs-status-row">
+            <span class="cs-mode-badge inactive" id="cs-mode">INACTIVE</span>
+            <span class="cs-progress-text" id="cs-progress-text">0 / 3</span>
+            <div class="cs-progress-bar"><div class="cs-progress-fill" id="cs-progress-fill"></div></div>
+            <div class="cs-stats">
+                <span>Done: <span id="cs-completed">0</span></span>
+                <span>Failed: <span class="cs-text-fail" id="cs-failed">0</span></span>
+                <span>Queue: <span id="cs-queue">0</span></span>
+            </div>
+        </div>
+        <div class="cs-pipeline" id="cs-pipeline">
+            <div class="cs-pipe-stage" id="cs-stage-pick"><div class="stage-icon"><i class="fas fa-hand-paper"></i></div>PICK</div>
+            <div class="cs-pipe-arrow">&rarr;</div>
+            <div class="cs-pipe-stage" id="cs-stage-grasp"><div class="stage-icon"><i class="fas fa-fist-raised"></i></div>GRASP</div>
+            <div class="cs-pipe-arrow">&rarr;</div>
+            <div class="cs-pipe-stage" id="cs-stage-lift"><div class="stage-icon"><i class="fas fa-arrow-up"></i></div>LIFT</div>
+            <div class="cs-pipe-arrow">&rarr;</div>
+            <div class="cs-pipe-stage" id="cs-stage-scan"><div class="stage-icon"><i class="fas fa-eye"></i></div>SCAN</div>
+            <div class="cs-pipe-arrow">&rarr;</div>
+            <div class="cs-pipe-stage" id="cs-stage-approach"><div class="stage-icon"><i class="fas fa-crosshairs"></i></div>APPROACH</div>
+            <div class="cs-pipe-arrow">&rarr;</div>
+            <div class="cs-pipe-stage" id="cs-stage-insert"><div class="stage-icon"><i class="fas fa-arrow-down"></i></div>INSERT</div>
+            <div class="cs-pipe-arrow">&rarr;</div>
+            <div class="cs-pipe-stage" id="cs-stage-release"><div class="stage-icon"><i class="fas fa-hand-holding"></i></div>RELEASE</div>
+            <div class="cs-pipe-arrow">&rarr;</div>
+            <div class="cs-pipe-stage" id="cs-stage-home"><div class="stage-icon"><i class="fas fa-home"></i></div>HOME</div>
+        </div>
+        <div class="cs-zones" id="cs-zones">
+            <div class="cs-zone-card" id="cs-zone-orange">
+                <div class="cs-zone-dot cs-zone-dot--orange"></div>
+                <div class="cs-zone-info">
+                    <div class="cs-zone-name cs-zone-name--orange">ORANGE — Cylinder</div>
+                    <div class="cs-zone-status" id="cs-zone-orange-status">Waiting</div>
+                </div>
+                <div class="cs-zone-icon cs-zone-icon--orange" id="cs-zone-orange-icon"><i class="fas fa-clock"></i></div>
+            </div>
+            <div class="cs-zone-card" id="cs-zone-blue">
+                <div class="cs-zone-dot cs-zone-dot--blue"></div>
+                <div class="cs-zone-info">
+                    <div class="cs-zone-name cs-zone-name--blue">BLUE — Triangle</div>
+                    <div class="cs-zone-status" id="cs-zone-blue-status">Waiting</div>
+                </div>
+                <div class="cs-zone-icon cs-zone-icon--blue" id="cs-zone-blue-icon"><i class="fas fa-clock"></i></div>
+            </div>
+            <div class="cs-zone-card" id="cs-zone-green">
+                <div class="cs-zone-dot cs-zone-dot--green"></div>
+                <div class="cs-zone-info">
+                    <div class="cs-zone-name cs-zone-name--green">GREEN — Square</div>
+                    <div class="cs-zone-status" id="cs-zone-green-status">Waiting</div>
+                </div>
+                <div class="cs-zone-icon cs-zone-icon--green" id="cs-zone-green-icon"><i class="fas fa-clock"></i></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════
+   DOWNLOAD MODAL
+══════════════════════════════════════ */
+function openGuide() {
+    document.getElementById('cs-guide').classList.add('show');
+}
+
+function closeGuide(evt) {
+    if (!evt || evt.target === document.getElementById('cs-guide')) {
+        document.getElementById('cs-guide').classList.remove('show');
+    }
+}
+
+function showDlModal(msg) {
+    document.getElementById('dl-msg').textContent = msg || 'Download simulation data:';
+    document.getElementById('dl-modal').classList.add('show');
+}
+function closeDlModal() { document.getElementById('dl-modal').classList.remove('show'); }
+function clearSnapshotStrip() {
+    var strip = document.getElementById('snap-strip');
+    if (strip) strip.innerHTML = '';
+}
+function clearDownloadArtifacts() {
+    closeDlModal();
+    clearSnapshotStrip();
+}
+function defaultReportFilename(fmt) {
+    var ext = (fmt || 'json').toLowerCase();
+    return 'color_sort_report.' + ext;
+}
+function triggerBlobDownload(blob, filename) {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1500);
+}
+function downloadReport(fmt) {
+    clearDownloadArtifacts();
+    fetch('/download_report?format=' + encodeURIComponent(fmt), { credentials: 'same-origin' })
+    .then(function(r){
+        if (!r.ok) throw new Error('report_request_failed');
+        var disp = r.headers.get('Content-Disposition') || '';
+        var match = /filename=([^;]+)/i.exec(disp);
+        var filename = match ? match[1].replace(/["']/g, '').trim() : defaultReportFilename(fmt);
+        return r.blob().then(function(blob){ return { blob: blob, filename: filename }; });
+    })
+    .then(function(result){
+        triggerBlobDownload(result.blob, result.filename);
+    })
+    .catch(function(){
+        showDlModal('Report download failed. Please try again.');
+    });
+}
+
+/* SNAPSHOT STRIP */
+var lastSnapshotCount = 0;
+var snapAck = {};
+try { snapAck = JSON.parse(sessionStorage.getItem('snapAckCS')||'{}'); } catch(e){}
+function _snapKey(s){ return (s.event||'')+'_'+(s.ts||'')+'_'+(s.color||'')+'_'+(s.zone||''); }
+function _isAck(k){ return !!snapAck[k]; }
+function _markAck(k){ snapAck[k]=1; try{ sessionStorage.setItem('snapAckCS', JSON.stringify(snapAck)); }catch(e){} }
+function addSnapCard(snap) {
+    var strip = document.getElementById('snap-strip');
+    var card  = document.createElement('div'); card.className = 'snap-card';
+    var label = (snap.color || '?') + ' -> ' + (snap.zone || '?');
+    var thumbHtml = snap.jpg_b64
+        ? '<img class="snap-thumb" src="data:image/jpeg;base64,' + snap.jpg_b64 + '">'
+        : '<div class="snap-thumb" style="background:#1a2030;display:flex;align-items:center;justify-content:center;color:#555;font-size:0.6rem">No img</div>';
+    card.innerHTML = thumbHtml + '<div class="snap-info"><b>' + label + '</b><br><button class="snap-dl" onclick="downloadReport(\'html\')">&#x2B07; Dashboard</button></div>';
+    strip.appendChild(card);
+    while (strip.children.length > 3) strip.removeChild(strip.firstChild);
+    setTimeout(function() {
+        if (card.parentNode) card.parentNode.removeChild(card);
+    }, 6500);
+}
+
+function pollSnapshots() {
+    fetch('/task_snapshots').then(function(r){ return r.json(); }).then(function(snaps) {
+        if (!Array.isArray(snaps)) return;
+        var sortSnaps = snaps.filter(function(s){ return s.event === 'sort_complete'; });
+        if (sortSnaps.length > lastSnapshotCount) {
+            var newSnaps = sortSnaps.slice(lastSnapshotCount);
+            lastSnapshotCount = sortSnaps.length;
+            newSnaps.forEach(function(snap) {
+                var k = _snapKey(snap);
+                if (_isAck(k)) return;
+                _markAck(k);
+                addSnapCard(snap);
+                showDlModal(snap.color + ' peg inserted into ' + snap.zone + ' zone! Download data?');
+            });
+        }
+    }).catch(function(){});
+}
+
+/* ══════════════════════════════════════
+   AUDIO
+══════════════════════════════════════ */
+var isMuted = false, audioCtx = null;
+function getAudioCtx() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+}
+function toggleMute() {
+    isMuted = !isMuted;
+    var btn = document.getElementById('cs-mute-btn'), icon = document.getElementById('cs-mute-icon');
+    if (isMuted) { btn.classList.add('muted'); icon.className = 'fas fa-volume-mute'; btn.innerHTML = '<i class="fas fa-volume-mute" id="cs-mute-icon"></i> MUTED'; window.speechSynthesis && window.speechSynthesis.cancel(); speechQueue = []; isSpeaking = false; }
+    else { btn.classList.remove('muted'); btn.innerHTML = '<i class="fas fa-volume-up" id="cs-mute-icon"></i> SOUND ON'; }
+}
+var _lastSpokenText = '', _lastSpokenTs = 0, speechQueue = [], isSpeaking = false, subtitleTimer = null;
+function robotSpeak(text, priority) {
+    if (isMuted || !text || !('speechSynthesis' in window)) return;
+    var now = Date.now();
+    if (text === _lastSpokenText && (now - _lastSpokenTs) < 6000) return;
+    _lastSpokenText = text; _lastSpokenTs = now;
+    if (priority === 'high') { window.speechSynthesis.cancel(); speechQueue = []; isSpeaking = false; }
+    if (speechQueue.length > 3) speechQueue.shift();
+    speechQueue.push({ text: text, priority: priority || 'normal' });
+    showSubtitle(text); processQueue();
+}
+function processQueue() {
+    if (isSpeaking || speechQueue.length === 0) return;
+    isSpeaking = true;
+    var item = speechQueue.shift();
+    var u = new SpeechSynthesisUtterance(item.text);
+    u.rate = 1.15; u.pitch = 0.9; u.volume = 0.9; u.lang = 'en-US';
+    var vs = window.speechSynthesis.getVoices();
+    var pv = vs.filter(function(v){ return v.lang.indexOf('en') === 0; });
+    if (pv.length) u.voice = pv[0];
+    u.onend = u.onerror = function() { isSpeaking = false; processQueue(); };
+    window.speechSynthesis.speak(u);
+}
+function showSubtitle(text) {
+    var el = document.getElementById('cs-subtitle'), textEl = document.getElementById('cs-subtitle-text');
+    textEl.innerText = text; el.classList.add('visible');
+    clearTimeout(subtitleTimer);
+    subtitleTimer = setTimeout(function(){ el.classList.remove('visible'); }, Math.max(4000, text.length * 80));
+}
+if ('speechSynthesis' in window) window.speechSynthesis.onvoiceschanged = function(){};
+var _muteRemember = false;
+document.addEventListener('visibilitychange', function(){
+    if (document.hidden) { _muteRemember = isMuted; if (!isMuted) toggleMute(); }
+    else if (!_muteRemember && isMuted) { toggleMute(); }
+});
+
+function playSound(effect) {
+    if (isMuted) return;
+    var ctx = getAudioCtx(), now = ctx.currentTime;
+    function tone(f,t,dur,vol,type){ var o=ctx.createOscillator(),g=ctx.createGain(); o.type=type||'sine'; o.frequency.setValueAtTime(f,t); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol,t+0.01); g.gain.exponentialRampToValueAtTime(0.001,t+dur); o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t+dur+0.05); }
+    switch(effect){
+        case 'servo_move':   tone(120,now,0.4,0.06,'sawtooth'); break;
+        case 'gripper_close':tone(1200,now,0.08,0.12,'square'); tone(350,now+0.05,0.08,0.12); break;
+        case 'gripper_open': tone(2000,now,0.06,0.08,'square'); tone(800,now+0.04,0.06,0.10,'triangle'); break;
+        case 'scan':         tone(880,now,0.10,0.12); tone(1100,now+0.15,0.10,0.12); tone(1760,now+0.30,0.12,0.20); break;
+        case 'insertion':    tone(180,now,0.5,0.5,'sawtooth'); break;
+        case 'success':      tone(523,now,0.18,0.15); tone(659,now+0.15,0.18,0.15); tone(784,now+0.30,0.18,0.15); tone(1047,now+0.45,0.22,0.25); break;
+        case 'task_complete':tone(523,now,0.20,0.18); tone(659,now+0.20,0.20,0.18); tone(784,now+0.40,0.20,0.18); tone(1047,now+0.60,0.26,0.28); break;
+        case 'startup':      tone(200,now,0.10,0.15); tone(400,now+0.1,0.10,0.15); tone(800,now+0.2,0.15,0.18); break;
+        case 'alert':        tone(800,now,0.15,0.15,'square'); tone(600,now+0.2,0.15,0.15,'square'); break;
+    }
+}
+
+/* ══════════════════════════════════════
+   SPEECH EVENTS POLLER
+══════════════════════════════════════ */
+var _speechSeq = 0, _soundSeq = 0, _pollBusy = false, _speechPrimed = false;
+function pollSpeechEvents() {
+    if (_pollBusy) return; _pollBusy = true;
+    fetch('/speech_events?speech_seq=' + _speechSeq + '&sound_seq=' + _soundSeq)
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+        if (!_speechPrimed) {
+            if (data.speech_seq != null) _speechSeq = data.speech_seq;
+            if (data.sound_seq  != null) _soundSeq  = data.sound_seq;
+            _speechPrimed = true;
+            return;
+        }
+        if (data.speech_seq != null) _speechSeq = data.speech_seq;
+        if (data.sound_seq  != null) _soundSeq  = data.sound_seq;
+        (data.speeches||[]).forEach(function(s){ robotSpeak(s.text, s.priority); });
+        (data.sounds||[]).forEach(function(s){ playSound(s.effect); });
+    }).catch(function(){}).finally(function(){ _pollBusy = false; });
+}
+
+/* ══════════════════════════════════════
+   SORT LOGIC
+══════════════════════════════════════ */
+var completedColors = {}, prevCompleted = 0, lastActiveColor = null;
+var COLOR_MAP = {orange:'#ff8800', blue:'#4488ff', green:'#00cc33'};
+var STAGE_MAP = {
+    'SORT_PICK_APPROACH':'cs-stage-pick','SORT_PICK_DOWN':'cs-stage-pick',
+    'SORT_GRASP':'cs-stage-grasp','SORT_REGRASP':'cs-stage-grasp',
+    'SORT_LIFT':'cs-stage-lift',
+    'SORT_SCAN':'cs-stage-scan',
+    'SORT_APPROACH':'cs-stage-approach','SORT_ALIGN':'cs-stage-insert',
+    'SORT_INSERT':'cs-stage-insert',
+    'SORT_EXTRACT':'cs-stage-release',
+    'SORT_RELEASE':'cs-stage-release',
+    'SORT_RETURN':'cs-stage-home',
+    'GO_HOME':'cs-stage-home'
+};
+var STAGE_ORDER = ['cs-stage-pick','cs-stage-grasp','cs-stage-lift','cs-stage-scan','cs-stage-approach','cs-stage-insert','cs-stage-release','cs-stage-home'];
+
+function startSort() {
+    getAudioCtx();
+    fetch('/command/COLOR_SORT', { method: 'POST' });
+    var btn = document.getElementById('cs-start-btn');
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> RUNNING...';
+    setTimeout(function(){ btn.disabled = false; btn.innerHTML = '<i class="fas fa-play"></i> START PEG-IN-HOLE'; }, 3000);
+}
+function resetSort() {
+    fetch('/command/RESET', { method: 'POST' });
+    completedColors = {}; prevCompleted = 0; lastSnapshotCount = 0; lastActiveColor = null;
+    clearDownloadArtifacts();
+    document.getElementById('cs-current-color').classList.remove('visible');
+    document.getElementById('cs-state').innerText = 'RESETTING';
+}
+
+function updateAll() {
+    Promise.all([
+        fetch('/color_sort_status').then(function(r){ return r.json(); }),
+        fetch('/status').then(function(r){ return r.json(); })
+    ]).then(function(results){
+        var sortData = results[0], statusData = results[1];
+        var state = statusData.state || 'IDLE';
+        document.getElementById('cs-state').innerText = state;
+
+        var mode = document.getElementById('cs-mode');
+        if (sortData.active) { mode.innerText = 'SORTING'; mode.className = 'cs-mode-badge sorting'; }
+        else if (sortData.total > 0 && sortData.completed >= sortData.total) { mode.innerText = 'COMPLETE'; mode.className = 'cs-mode-badge done'; }
+        else { mode.innerText = 'INACTIVE'; mode.className = 'cs-mode-badge inactive'; }
+
+        var completed = sortData.completed||0, total = sortData.total||0, failed = sortData.failed||0, queue = sortData.queue_remaining||0;
+        var pct = total > 0 ? (completed / total * 100) : 0;
+        document.getElementById('cs-progress-text').innerText = completed + ' / ' + (total || 3);
+        document.getElementById('cs-progress-fill').style.width = pct + '%';
+        document.getElementById('cs-completed').innerText = completed;
+        document.getElementById('cs-failed').innerText   = failed;
+        document.getElementById('cs-queue').innerText    = queue;
+
+        if (completed > prevCompleted && lastActiveColor) { completedColors[lastActiveColor] = true; }
+        prevCompleted = completed;
+
+        var currentColor = sortData.current_color;
+        var ccEl = document.getElementById('cs-current-color');
+        if (sortData.active && currentColor && COLOR_MAP[currentColor]) {
+            ccEl.classList.add('visible');
+            document.getElementById('cs-current-dot').style.background = COLOR_MAP[currentColor];
+            document.getElementById('cs-current-label').innerText = currentColor.toUpperCase();
+            document.getElementById('cs-current-label').style.color = COLOR_MAP[currentColor];
+            lastActiveColor = currentColor;
+        } else { ccEl.classList.remove('visible'); }
+
+        // Pipeline
+        var activeStage = STAGE_MAP[state] || null, activeIdx = activeStage ? STAGE_ORDER.indexOf(activeStage) : -1;
+        STAGE_ORDER.forEach(function(sid, idx){
+            var el = document.getElementById(sid); el.classList.remove('active','completed');
+            if (sortData.active) {
+                if (sid === activeStage) el.classList.add('active');
+                else if (activeIdx >= 0 && idx < activeIdx) el.classList.add('completed');
+            }
+        });
+
+        // Zone cards
+        var targetColor = sortData.target_zone ? sortData.target_zone.color_name : null;
+        ['orange','blue','green'].forEach(function(color){
+            var card=document.getElementById('cs-zone-'+color), statusEl=document.getElementById('cs-zone-'+color+'-status'), iconEl=document.getElementById('cs-zone-'+color+'-icon');
+            card.classList.remove('active-zone','done-zone');
+            if (sortData.active && targetColor === color) {
+                card.classList.add('active-zone'); statusEl.innerText='Inserting...'; statusEl.style.color='#00ff96'; iconEl.innerHTML='<i class="fas fa-cog fa-spin"></i>';
+            } else if (completedColors[color]) {
+                card.classList.add('done-zone'); statusEl.innerText='Inserted'; statusEl.style.color='#00d4ff'; iconEl.innerHTML='<i class="fas fa-check-circle"></i>';
+            } else { statusEl.innerText='Waiting'; statusEl.style.color='#666'; iconEl.innerHTML='<i class="fas fa-clock"></i>'; }
+        });
+
+        if (!sortData.active && sortData.total > 0 && completed >= sortData.total) {
+            ['orange','blue','green'].forEach(function(c){ completedColors[c] = true; });
+        }
+
+        // Start btn
+        var btn = document.getElementById('cs-start-btn');
+        if (sortData.active) { btn.disabled=true; btn.innerHTML='<i class="fas fa-sync-alt fa-spin"></i> RUNNING...'; }
+        else if (state !== 'IDLE') { btn.disabled=true; btn.innerHTML='<i class="fas fa-hourglass-half"></i> WAIT (BUSY)'; }
+        else { btn.disabled=false; btn.innerHTML='<i class="fas fa-play"></i> START PEG-IN-HOLE'; }
+
+    }).catch(function(){ document.getElementById('cs-state').innerText = 'OFFLINE'; });
+}
+
+setInterval(updateAll,       120);
+setInterval(pollSpeechEvents,180);
+setInterval(pollSnapshots,  800);
+updateAll();
+document.addEventListener('keydown', function(event){
+    if (event.key === 'Escape') closeGuide();
+});
+</script>
+<script>
+window.ARIA_WIDGET_CONTEXT = {
+    page_name: 'Color Sorting Workbench',
+    hint: 'Use the start button in this page header to begin the conveyor-driven color sort sequence.',
+    instructions: 'Start the run from the top header, watch the pipeline and zone cards below the feed, and use reset to bring the cell back to idle.'
+};
+window.ARIA_WIDGET_FEED_SELECTOR = '.cs-video img';
+</script>
+<script src="{{ url_for('static', filename='aria_widget.js') }}"></script>
+</body>
+</html>

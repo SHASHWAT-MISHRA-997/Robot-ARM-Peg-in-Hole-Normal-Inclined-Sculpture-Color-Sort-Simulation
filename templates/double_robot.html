@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#07090e">
+<title>Double Robot Workbench - Shashwat Mishra</title>
+<style>
+:root{
+  --bg:#07090e;--panel:#0d1117;--panel2:#121820;--border:#1c2430;
+  --accent:#00d4ff;--accent2:#00ff88;--warn:#ff9f43;--danger:#ff3860;
+  --text:#cdd6e8;--dim:#5a6a80;--violet:#9b59ff;--bar-h:54px;--header-h:48px;
+  --left-w:272px;--right-w:304px;--safe-top:env(safe-area-inset-top,0px);
+  --safe-bot:env(safe-area-inset-bottom,0px);--safe-left:env(safe-area-inset-left,0px);
+  --safe-right:env(safe-area-inset-right,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{height:100%;-webkit-text-size-adjust:100%}
+body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI',system-ui,sans-serif;overflow:hidden;touch-action:manipulation}
+a{color:inherit}
+button,select{font:inherit}
+#panel-overlay{display:none;position:fixed;inset:0;background:rgba(3,7,12,.18);z-index:22;backdrop-filter:blur(3px)}
+#panel-overlay.show{display:block}
+#app{display:flex;height:100vh;height:100dvh;width:100vw;position:relative;overflow:hidden}
+#left-panel,#right-panel{
+  background:rgba(9,13,20,.86);
+  backdrop-filter:blur(18px) saturate(130%);
+  position:relative;z-index:25;overflow:hidden;flex-shrink:0;
+  display:flex;flex-direction:column;min-height:0;
+  transition:transform .3s cubic-bezier(.4,0,.2,1),width .3s cubic-bezier(.4,0,.2,1),min-width .3s cubic-bezier(.4,0,.2,1),opacity .2s ease,padding .3s cubic-bezier(.4,0,.2,1),border-color .2s ease;
+}
+#left-panel{width:var(--left-w);min-width:var(--left-w);border-right:1px solid rgba(0,212,255,.10);padding-left:var(--safe-left)}
+#right-panel{width:var(--right-w);min-width:var(--right-w);border-left:1px solid rgba(0,212,255,.10);padding-right:var(--safe-right)}
+#left-panel.hidden{transform:translateX(-14px);width:0;min-width:0;padding-left:0;border-right-color:transparent;opacity:0;pointer-events:none}
+#right-panel.hidden{transform:translateX(14px);width:0;min-width:0;padding-right:0;border-left-color:transparent;opacity:0;pointer-events:none}
+#center{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
+.edge-trigger{
+  position:fixed;top:50%;transform:translateY(-50%);width:34px;height:138px;z-index:30;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;border:1px solid rgba(0,212,255,.16);
+  background:linear-gradient(180deg,rgba(9,16,28,.94),rgba(6,11,20,.88));backdrop-filter:blur(10px);
+  box-shadow:0 12px 28px rgba(0,0,0,.32);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;
+}
+#left-edge{left:0;border-radius:0 16px 16px 0}
+#right-edge{right:0;border-radius:16px 0 0 16px}
+.edge-trigger:hover{transform:translateY(-50%) translateX(1px);border-color:rgba(0,212,255,.36);box-shadow:0 0 18px rgba(0,212,255,.18),0 18px 34px rgba(0,0,0,.34)}
+#right-edge:hover{transform:translateY(-50%) translateX(-1px)}
+.edge-trigger::before{content:'';position:absolute;inset:0;border-radius:inherit;background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,0) 38%,rgba(0,212,255,.04));pointer-events:none}
+.edge-stack{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:8px}
+.edge-icon{font-size:16px;line-height:1;color:#dff8ff;text-shadow:0 0 10px rgba(0,212,255,.24)}
+.edge-label{writing-mode:vertical-rl;transform:rotate(180deg);font-size:10px;letter-spacing:1.8px;font-weight:800;text-transform:uppercase;color:#8bcde1}
+#header{
+  height:var(--header-h);background:rgba(8,12,18,.72);border-bottom:1px solid rgba(0,212,255,.10);display:flex;align-items:center;
+  padding:0 12px;gap:10px;flex-shrink:0;padding-top:var(--safe-top);backdrop-filter:blur(18px) saturate(125%)
+}
+#menu-btn,#tele-tab-btn{
+  display:none;background:none;border:1px solid var(--border);color:var(--dim);min-width:34px;height:34px;border-radius:7px;
+  font-size:11px;cursor:pointer;align-items:center;justify-content:center;flex-shrink:0;padding:0 10px
+}
+#project-name{font-size:10.8px;font-weight:700;color:var(--accent);letter-spacing:.4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
+#guide-btn{
+  position:relative;background:rgba(8,18,30,.76);border:1px solid rgba(0,212,255,.24);color:#eaf8ff;width:40px;height:40px;border-radius:50%;
+  font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease;
+  box-shadow:0 10px 24px rgba(0,0,0,.22);backdrop-filter:blur(12px)
+}
+#guide-btn:hover{transform:translateY(-1px);border-color:rgba(0,212,255,.38);box-shadow:0 12px 26px rgba(0,0,0,.24),0 0 0 1px rgba(0,212,255,.12)}
+.guide-core{position:relative;z-index:1;font-weight:900;letter-spacing:.4px;text-shadow:0 0 12px rgba(255,255,255,.28)}
+#made-by{display:inline-flex;align-items:center;gap:4px;width:max-content;max-width:100%;padding:4px 10px;border-radius:999px;border:1px solid rgba(0,255,136,.18);background:rgba(0,255,136,.08);box-shadow:inset 0 0 0 1px rgba(255,255,255,.03);font-size:10px;color:#bff5da;white-space:nowrap;flex-shrink:0}
+#made-by a{color:#7effb4;text-decoration:none;font-weight:800}
+.ph{padding:12px 13px 8px;font-size:10px;font-weight:800;letter-spacing:1.8px;color:var(--accent);text-transform:uppercase;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;align-items:center;gap:8px}
+.ph-close{display:none!important;margin-left:auto;background:none;border:none;color:var(--dim);font-size:18px;cursor:pointer;line-height:1;padding:2px}
+.slabel{padding:10px 13px 4px;font-size:9.5px;font-weight:700;letter-spacing:1.3px;color:var(--dim);text-transform:uppercase}
+#left-scroll,#tele-scroll{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+#left-scroll::-webkit-scrollbar,#tele-scroll::-webkit-scrollbar{width:4px}
+#left-scroll::-webkit-scrollbar-thumb,#tele-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.cbtn,.sbtn,.ctl-btn,.selector{
+  display:flex;align-items:center;gap:8px;margin:2px 8px;padding:0 11px;min-height:46px;border-radius:10px;border:1px solid transparent;
+  background:var(--panel2);color:var(--text);font-size:13px;font-weight:500;cursor:pointer;transition:background .14s,border-color .14s,box-shadow .14s,transform .14s;text-align:left;width:calc(100% - 16px);user-select:none;position:relative;overflow:hidden;isolation:isolate
+}
+.selector{width:100%;margin:0;padding:0 12px;background:#0c131d;border-color:rgba(0,212,255,.10)}
+.cbtn:hover,.sbtn:hover,.ctl-btn:hover{background:#182030;border-color:rgba(0,212,255,.32);color:#fff;box-shadow:0 0 0 1px rgba(0,212,255,.18),0 0 18px rgba(0,212,255,.12)}
+.cbtn:active,.sbtn:active,.ctl-btn:active{transform:scale(.98)}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.arrow{margin-left:auto;font-size:9px;transition:transform .22s;opacity:.6}
+.submenu-parent.open .arrow{transform:rotate(90deg)}
+.submenu{overflow:hidden;max-height:0;transition:max-height .25s ease;padding-left:18px}
+.submenu-parent.open .submenu{max-height:260px}
+.sbtn{margin:2px 8px 2px 0;width:calc(100% - 8px);background:transparent;color:var(--dim);min-height:40px}
+.work-link{text-decoration:none}
+.cbtn small,.sbtn small,.ctl-btn small{margin-left:auto;color:#8b9bad;font-size:10px}
+.b-work-main{border-color:rgba(0,204,170,.28)}
+.b-work-double{border-color:rgba(155,89,255,.30)}
+.b-work-color{border-color:rgba(204,68,255,.28)}
+.b-work-congruent{border-color:rgba(255,159,67,.32)}
+.b-reset{border-color:rgba(255,56,96,.28)!important;color:#ff93aa!important;background:rgba(255,56,96,.08)!important}
+.b-stop{border-color:rgba(255,110,110,.30)!important;color:#ffd6d6!important;background:rgba(255,95,109,.12)!important}
+.d-g{background:#33cc55}.d-o{background:#ffaa22}.d-y{background:#ddcc33}.d-b{background:#4488ff}.d-p{background:#cc44ff}.d-c{background:#00ccaa}.d-v{background:#9b59ff}.d-r{background:#ff3860}.d-e{background:#ff5f6d}.d-cg{background:#ff9f43}
+.assign-card,.assistant-card{
+  margin:10px 10px 0;padding:12px;border-radius:16px;background:linear-gradient(180deg,rgba(18,24,34,.96),rgba(12,18,28,.94));
+  border:1px solid rgba(255,255,255,.06);box-shadow:0 14px 30px rgba(0,0,0,.22)
+}
+.assign-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.assign-title{font-size:12px;font-weight:800;letter-spacing:1.1px;text-transform:uppercase;color:#ebf7ff}
+.assign-badge{padding:4px 8px;border-radius:999px;background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.18);color:#aeeeff;font-size:10px;font-weight:700}
+.selector-row{display:flex;flex-direction:column;gap:10px}
+.btn-cluster{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
+.ctl-btn{width:100%;margin:0;justify-content:flex-start;background:rgba(255,255,255,.03);min-height:42px}
+.ctl-btn.primary{background:rgba(0,255,136,.08);border-color:rgba(0,255,136,.20);color:#c9ffe2}
+.ctl-btn.warn{background:rgba(255,159,67,.10);border-color:rgba(255,159,67,.18);color:#ffd1a3}
+.system-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 10px 0}
+.status-note{display:none}
+#assign-status{display:block;margin:10px 10px 0;padding:0 2px;min-height:20px;color:var(--accent2);font-size:12px;line-height:1.45}
+.assistant-card{display:none}
+.assistant-card p{font-size:12px;color:#c6d8ea;line-height:1.6}
+.assistant-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.assistant-pill{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;border:1px solid rgba(0,255,136,.18);background:rgba(0,255,136,.08);font-size:11px;font-weight:700;color:#bff5da}
+.assistant-logo-row{display:flex;align-items:center;gap:12px;margin-top:12px;padding:10px 12px;border-radius:16px;border:1px solid rgba(0,212,255,.16);background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02))}
+.assistant-logo-chip{position:relative;width:68px;height:68px;border-radius:20px;overflow:hidden;flex-shrink:0;background:radial-gradient(circle at 50% 18%,rgba(0,212,255,.16),rgba(10,15,24,.96) 58%);box-shadow:0 0 0 1px rgba(255,255,255,.08),0 0 18px rgba(0,212,255,.14)}
+.assistant-logo-chip img{position:absolute;inset:8px;width:calc(100% - 16px);height:calc(100% - 16px);object-fit:contain;filter:drop-shadow(0 0 12px rgba(0,212,255,.18))}
+.assistant-logo-chip span{position:absolute;right:7px;bottom:6px;z-index:2;font-size:8px;line-height:1.02;font-weight:900;letter-spacing:1px;color:#eefbff;text-align:right;text-shadow:0 0 10px rgba(255,255,255,.24),0 0 18px rgba(0,212,255,.18)}
+.assistant-logo-meta{font-size:11px;line-height:1.6;color:#b9cce0}
+#video-wrap{flex:1;position:relative;overflow:auto;background:#030507;min-height:0}
+#stage{min-height:100%;padding:28px 34px 44px;background:
+  radial-gradient(circle at top left, rgba(0,212,255,.09), transparent 22%),
+  radial-gradient(circle at top right, rgba(0,255,136,.07), transparent 26%),
+  linear-gradient(180deg,#05070b,#060b12 38%,#05090f)}
+.stage-stack{max-width:1440px;margin:0 auto;display:grid;gap:20px}
+.hero-card{
+  background:linear-gradient(160deg,rgba(7,11,18,.72),rgba(10,16,28,.58));
+  border:1px solid rgba(0,212,255,.18);border-radius:24px;box-shadow:0 22px 70px rgba(0,0,0,.38);
+  padding:20px 20px 16px;backdrop-filter:blur(18px)
+}
+.hero-top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.hero-copy h1{font-size:21px;color:#eef7ff;line-height:1.1}
+.hero-copy p{margin-top:8px;font-size:12px;line-height:1.68;color:#c6d8ea;max-width:620px}
+.hero-chips{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:16px}
+.hero-chip{padding:14px 16px;border-radius:18px;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.07);min-height:92px}
+.hero-chip.assignment-chip{grid-column:1/-1}
+.hero-chip .k{font-size:10px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:#8ec9e7}
+.hero-chip .v{margin-top:6px;font-size:12px;line-height:1.5;color:#e8f3ff}
+.hero-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.hero-pill{padding:8px 12px;border-radius:999px;border:1px solid rgba(0,255,136,.20);background:rgba(0,255,136,.08);font-size:11px;font-weight:800;color:#bff5da;white-space:nowrap}
+.hero-cta{padding:10px 14px;border-radius:12px;border:1px solid rgba(0,212,255,.20);background:rgba(0,212,255,.08);color:#d7ecfb;text-decoration:none;font-size:12px;font-weight:700}
+.overview-card,.dual-grid .feed-card{
+  margin-top:0;background:linear-gradient(180deg,rgba(8,14,23,.94),rgba(10,16,24,.92));border:1px solid rgba(255,255,255,.06);border-radius:24px;
+  box-shadow:0 16px 38px rgba(0,0,0,.24);padding:18px
+}
+.feed-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px}
+.feed-title h2,.feed-title h3{color:#eaf8ff;font-size:18px}
+.feed-title p{margin-top:6px;color:#a9bdd2;font-size:12px;line-height:1.6}
+.feed-badge{padding:6px 10px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;border:1px solid rgba(0,212,255,.24);background:rgba(0,212,255,.08);color:var(--accent)}
+.stage-frame{
+  width:100%;overflow:hidden;border-radius:20px;border:1px solid rgba(255,255,255,.06);background:#02070c;box-shadow:inset 0 0 0 1px rgba(255,255,255,.03)
+}
+.stage-frame img{width:100%;height:100%;display:block;object-fit:contain}
+.overview-frame{aspect-ratio:16/6.4}
+.dual-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.robot-frame{aspect-ratio:16/11.2}
+.robot-strip{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.metric-chip{padding:10px 13px;border-radius:14px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);color:#d2e2f1;font-size:11px;font-weight:700}
+.preview-copy{margin-top:12px;padding:12px 14px;border-radius:16px;border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.03);font-size:11px;color:#c8d9ea;line-height:1.65}
+#speech-bar{height:var(--bar-h);background:rgba(8,12,18,.78);border-top:1px solid rgba(0,212,255,.10);display:flex;align-items:center;padding:0 12px;gap:9px;flex-shrink:0;padding-bottom:var(--safe-bot);backdrop-filter:blur(18px)}
+#speech-icon{font-size:18px;flex-shrink:0;transition:transform .2s}
+#speech-icon.active{animation:rPulse .6s infinite alternate}
+@keyframes rPulse{from{transform:scale(1)}to{transform:scale(1.2)}}
+#speech-text{flex:1;font-size:12.5px;color:var(--accent2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-style:italic;transition:opacity .4s}
+#speech-text.fading{opacity:.2}
+#tts-toggle{background:none;border:1px solid var(--border);color:var(--dim);padding:5px 11px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;flex-shrink:0;transition:all .15s;user-select:none}
+#tts-toggle.on{border-color:var(--accent2);color:var(--accent2);background:rgba(0,255,136,.08)}
+#bottom-nav{display:none;height:56px;background:#080c12;border-top:1px solid var(--border);flex-shrink:0;align-items:stretch;padding-bottom:var(--safe-bot);z-index:20}
+.bnav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:none;border:none;color:var(--dim);font-size:10px;cursor:pointer;padding:6px 0;transition:color .15s;border-top:2px solid transparent}
+.bnav-btn.active{color:var(--accent);border-top-color:var(--accent)}
+.bnav-icon{font-size:18px;line-height:1}
+#kw-strip{display:none}
+.kw{font-size:9px;padding:2px 7px;border-radius:10px;border:1px solid var(--border);color:var(--dim);background:var(--panel2);white-space:nowrap}
+#aggregate-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;border:1px solid var(--border);font-size:12.5px;font-weight:700;background:#0d1520;color:var(--accent);margin:7px 12px}
+.led{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+.tsec{border-bottom:1px solid var(--border);padding:10px 12px;flex-shrink:0}
+.ttitle{font-size:11px;font-weight:800;letter-spacing:1.3px;color:var(--accent);text-transform:uppercase;margin-bottom:8px}
+.summary-grid,.tele-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.tele-card{padding:12px;border-radius:16px;background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.06)}
+.tele-grid .tele-card{padding:14px}
+.tele-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.tele-head h3{font-size:13px;font-weight:800;color:#eef8ff}
+.tele-badge{padding:5px 8px;border-radius:999px;font-size:10px;font-weight:700;border:1px solid rgba(0,212,255,.18);background:rgba(0,212,255,.08);color:#bfefff}
+.trow{display:flex;justify-content:space-between;align-items:center;padding:2.5px 0;font-size:12px;gap:10px}
+.tkey{color:var(--dim)}
+.tval{color:var(--text);font-variant-numeric:tabular-nums;text-align:right;max-width:180px;word-break:break-word}
+.tval.good{color:var(--accent2)}.tval.warn{color:var(--warn)}.tval.bad{color:var(--danger)}
+.prog-bg{height:7px;background:#182030;border-radius:4px;overflow:hidden;margin:8px 0 4px}
+.prog-fg{height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));border-radius:4px;transition:width .3s}
+.vision-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:10px;font-size:10.5px;font-weight:600;border:1px solid #333;color:#c6d8ea;background:rgba(255,255,255,.03)}
+.vswatch{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+.force-canvas{width:100%;height:64px;display:block;background:#070b10;border-radius:10px;border:1px solid rgba(255,255,255,.04);margin-top:8px}
+.joint-bars{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.jrow{display:flex;flex-direction:column;gap:3px}
+.jlabel{font-size:10px;color:var(--dim);display:flex;justify-content:space-between}
+.jbg{height:4px;background:#182030;border-radius:999px;overflow:hidden}
+.jfg{height:100%;background:var(--accent);transition:width .15s}
+.tele-note{display:none}
+.tele-note div{font-size:10px;color:var(--dim);line-height:1.7}
+.tele-note a{color:var(--accent2);text-decoration:none;font-weight:600}
+#tele-scroll-cue{position:absolute;left:12px;right:12px;bottom:10px;display:flex;align-items:center;justify-content:center;gap:9px;padding:10px 12px;border-radius:14px;border:1px solid rgba(0,212,255,.24);background:linear-gradient(180deg,rgba(7,12,20,0),rgba(7,12,20,.92) 38%,rgba(0,212,255,.10));box-shadow:0 10px 24px rgba(0,0,0,.28);pointer-events:none;opacity:0;transform:translateY(10px);transition:opacity .18s ease,transform .18s ease}
+#tele-scroll-cue.show{opacity:1;transform:translateY(0)}
+.tele-scroll-copy{font-size:10px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:#bfefff}
+.tele-scroll-arrows{display:inline-flex;gap:2px;font-size:14px;color:var(--accent);text-shadow:0 0 12px rgba(0,212,255,.28);animation:teleCueBounce 1s ease-in-out infinite alternate}
+@keyframes teleCueBounce{from{transform:translateY(-1px);opacity:.72}to{transform:translateY(5px);opacity:1}}
+#guide-overlay{display:none;position:fixed;inset:0;z-index:180;background:rgba(2,6,12,.18);backdrop-filter:blur(5px)}
+#guide-overlay.show{display:flex;align-items:center;justify-content:center}
+#guide-card{position:relative;width:min(1020px,calc(100vw - 28px));max-height:min(84vh,calc(100dvh - 30px));overflow:auto;background:linear-gradient(160deg,rgba(7,11,18,.56),rgba(10,16,28,.44));border:1px solid rgba(0,212,255,.18);border-radius:24px;box-shadow:0 22px 70px rgba(0,0,0,.56);padding:22px 22px 18px;backdrop-filter:blur(18px)}
+#guide-card::before{content:'';position:absolute;inset:0;border-radius:24px;background:linear-gradient(120deg,rgba(255,255,255,.08),rgba(255,255,255,0) 38%,rgba(0,212,255,.05));pointer-events:none}
+#guide-card::-webkit-scrollbar{width:4px}
+#guide-card::-webkit-scrollbar-thumb{background:rgba(0,212,255,.18);border-radius:2px}
+#guide-head{display:flex;align-items:flex-start;gap:14px}
+#guide-head-main{flex:1}
+#guide-kicker{font-size:10px;letter-spacing:2px;color:#9bdcff;text-transform:uppercase;font-weight:800}
+#guide-title{font-size:24px;font-weight:800;color:#eef7ff;line-height:1.12;margin-top:6px;max-width:760px}
+#guide-sub{font-size:12px;color:#c6d8ea;line-height:1.7;margin-top:9px;max-width:760px}
+#guide-close{background:none;border:1px solid rgba(255,255,255,.10);color:#9eb5cb;width:36px;height:36px;border-radius:50%;font-size:16px;cursor:pointer;flex-shrink:0}
+#guide-close:hover{border-color:rgba(255,56,96,.28);color:#ff9cab;background:rgba(255,56,96,.08)}
+#guide-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:18px}
+.guide-item{background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.03));border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:16px 16px 14px;min-height:178px;backdrop-filter:blur(10px)}
+.guide-icon{width:42px;height:42px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(0,212,255,.22),rgba(155,89,255,.14));color:#effaff;font-size:18px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.10),0 10px 24px rgba(0,0,0,.18)}
+.guide-item h3{font-size:14px;font-weight:800;color:#eff7ff;margin-top:12px}
+.guide-item p{font-size:12px;color:#c6d8ea;line-height:1.7;margin-top:8px}
+.guide-meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:11px}
+.guide-chip{font-size:10px;padding:4px 8px;border-radius:999px;border:1px solid rgba(0,212,255,.16);background:rgba(0,212,255,.06);color:#bce7ff}
+@media (max-width:1180px){
+  :root{--left-w:286px;--right-w:340px}
+  .hero-chips{grid-template-columns:1fr}
+  .hero-chip.assignment-chip{grid-column:auto}
+  .dual-grid,.tele-grid,.summary-grid,.btn-cluster,.system-row{grid-template-columns:1fr}
+}
+@media (max-width:1024px){
+  #menu-btn,#tele-tab-btn,#bottom-nav{display:flex}
+  .ph-close{display:inline-flex!important}
+  #left-panel,#right-panel{
+    position:fixed;top:0;bottom:0;width:min(94vw,360px);min-width:auto;z-index:31;box-shadow:0 18px 38px rgba(0,0,0,.34)
+  }
+  #left-panel{left:0;transform:translateX(-102%);padding-left:max(0px,var(--safe-left))}
+  #right-panel{right:0;transform:translateX(102%);padding-right:max(0px,var(--safe-right))}
+  #left-panel.hidden,#right-panel.hidden{width:min(94vw,360px);min-width:auto;opacity:1;pointer-events:auto;border-color:rgba(0,212,255,.10)}
+  #left-panel.show{transform:translateX(0)}
+  #right-panel.show{transform:translateX(0)}
+  #left-edge,#right-edge{display:none}
+  #stage{padding:12px}
+}
+@media (max-width:820px){
+  .hero-top{flex-direction:column}
+  .hero-chips{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div id="guide-overlay" onclick="closeGuide(event)">
+  <div id="guide-card" onclick="event.stopPropagation()">
+    <div id="guide-head">
+      <div id="guide-head-main">
+        <div id="guide-kicker">Dual Workbench Guide</div>
+        <div id="guide-title">The double robot page now follows the same dashboard structure as the main simulation, but with mirrored control and telemetry for both cells.</div>
+        <div id="guide-sub">Use the left panel to assign surface and color sort tasks per robot, keep the center stage focused on the selected setup only, and use the right panel for live dual telemetry, grasp quality, force, slip, and pose details.</div>
+      </div>
+      <button id="guide-close" type="button" onclick="closeGuide()" aria-label="Close guide">x</button>
+    </div>
+    <div id="guide-grid">
+      <div class="guide-item">
+        <div class="guide-icon">1</div>
+        <h3>Main Dashboard Layout</h3>
+        <p>The page uses the same control panel, center stage, and telemetry panel pattern as the main dashboard, so the workflow stays familiar when you move between workbenches.</p>
+        <div class="guide-meta"><span class="guide-chip">Control</span><span class="guide-chip">Center Stage</span><span class="guide-chip">Telemetry</span></div>
+      </div>
+      <div class="guide-item">
+        <div class="guide-icon">2</div>
+        <h3>Same Task Logic</h3>
+        <p>Both robots can run the same surface tasks and the color sort workbench logic. The selected task previews are synchronized so each cell only focuses on its chosen setup.</p>
+        <div class="guide-meta"><span class="guide-chip">Normal</span><span class="guide-chip">Inclined</span><span class="guide-chip">Sculpture</span><span class="guide-chip">Color Sort</span></div>
+      </div>
+      <div class="guide-item">
+        <div class="guide-icon">3</div>
+        <h3>Dual Telemetry</h3>
+        <p>Each robot reports its own task progress, active target, conjugate grasp, vision, slip, wrist force, and end-effector state. You can inspect both cells side by side without losing context.</p>
+        <div class="guide-meta"><span class="guide-chip">Force</span><span class="guide-chip">Vision</span><span class="guide-chip">Slip</span></div>
+      </div>
+      <div class="guide-item">
+        <div class="guide-icon">4</div>
+        <h3>Assistant And Voice</h3>
+        <p>The AI assistant remains available on this page, and duplicate robot announcements are filtered so the same line does not keep repeating while the double cell is running.</p>
+        <div class="guide-meta"><span class="guide-chip">AI</span><span class="guide-chip">Voice</span><span class="guide-chip">Scene aware</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="panel-overlay" onclick="closeAllPanels()"></div>
+<div id="app">
+  <div class="edge-trigger" id="left-edge" onclick="togglePanel('left')" aria-label="Toggle control panel">
+    <div class="edge-stack"><span class="edge-icon">CTL</span><span class="edge-label">Control</span></div>
+  </div>
+  <div class="edge-trigger" id="right-edge" onclick="togglePanel('right')" aria-label="Toggle telemetry panel">
+    <div class="edge-stack"><span class="edge-icon">TEL</span><span class="edge-label">Telemetry</span></div>
+  </div>
+  <div id="left-panel">
+    <div class="ph">Robot Control<button class="ph-close" type="button" onclick="closePanel('left')">x</button></div>
+    <div id="left-scroll">
+      <div class="slabel">Workbench</div>
+      <a class="cbtn work-link b-work-main" href="/"><span class="dot d-c"></span>Main Simulation Dashboard<small>Single Cell</small></a>
+      <a class="cbtn work-link b-work-double" href="/double"><span class="dot d-v"></span>Double Robot Workbench<small>Current</small></a>
+      <a class="cbtn work-link b-work-congruent" href="/congruent_surface"><span class="dot d-cg"></span>Congruent Workbench<small>Curvature</small></a>
+      <a class="cbtn work-link b-work-color" href="/color_sort"><span class="dot d-p"></span>Color Sort Workbench<small>Dedicated Cell</small></a>
+
+      <div class="slabel">System</div>
+      <div class="system-row">
+        <button class="ctl-btn primary" type="button" onclick="startBoth()">Start Both</button>
+        <button class="ctl-btn b-reset" type="button" onclick="resetBoth()">Reset Both</button>
+        <button class="ctl-btn b-stop" type="button" onclick="stopBoth()">Stop Both</button>
+        <button class="ctl-btn warn" type="button" onclick="openGuide()">Instructions</button>
+      </div>
+
+      <div class="assign-card">
+        <div class="assign-head"><div class="assign-title">Robot 1 Assignment</div><span class="assign-badge">Left Cell</span></div>
+        <div class="selector-row">
+          <select class="selector" id="r1-task">
+            <option value="Normal Surface">Normal Surface</option>
+            <option value="15 DEG">15 Degree Incline</option>
+            <option value="30 DEG">30 Degree Incline</option>
+            <option value="45 DEG">45 Degree Incline</option>
+            <option value="DOME">Sculpture Surface</option>
+            <option value="COLOR_SORT">Color Sort Workbench</option>
+          </select>
+        </div>
+        <div class="btn-cluster">
+          <button class="ctl-btn primary" type="button" onclick="startRobotFromSelect(1)">Start Selected</button>
+          <button class="ctl-btn" type="button" onclick="syncPreview()">Preview Only</button>
+          <button class="ctl-btn" type="button" onclick="setRobotTask(1,'Normal Surface',true)"><span class="dot d-g"></span>Normal</button>
+          <button class="ctl-btn" type="button" onclick="toggleSubmenu('r1-inclined')"><span class="dot d-o"></span>Inclined <span class="arrow">></span></button>
+        </div>
+        <div class="submenu-parent" id="r1-inclined">
+          <div class="submenu">
+            <button class="sbtn" type="button" onclick="setRobotTask(1,'15 DEG',true)"><span class="dot d-y"></span>15 Degree Incline</button>
+            <button class="sbtn" type="button" onclick="setRobotTask(1,'30 DEG',true)"><span class="dot d-b"></span>30 Degree Incline</button>
+            <button class="sbtn" type="button" onclick="setRobotTask(1,'45 DEG',true)"><span class="dot d-p"></span>45 Degree Incline</button>
+          </div>
+        </div>
+        <div class="btn-cluster">
+          <button class="ctl-btn" type="button" onclick="setRobotTask(1,'DOME',true)"><span class="dot d-c"></span>Sculpture</button>
+          <button class="ctl-btn" type="button" onclick="setRobotTask(1,'COLOR_SORT',true)"><span class="dot d-p"></span>Color Sort</button>
+        </div>
+      </div>
+
+      <div class="assign-card">
+        <div class="assign-head"><div class="assign-title">Robot 2 Assignment</div><span class="assign-badge">Right Cell</span></div>
+        <div class="selector-row">
+          <select class="selector" id="r2-task">
+            <option value="Normal Surface">Normal Surface</option>
+            <option value="15 DEG">15 Degree Incline</option>
+            <option value="30 DEG">30 Degree Incline</option>
+            <option value="45 DEG">45 Degree Incline</option>
+            <option value="DOME">Sculpture Surface</option>
+            <option value="COLOR_SORT">Color Sort Workbench</option>
+          </select>
+        </div>
+        <div class="btn-cluster">
+          <button class="ctl-btn primary" type="button" onclick="startRobotFromSelect(2)">Start Selected</button>
+          <button class="ctl-btn" type="button" onclick="syncPreview()">Preview Only</button>
+          <button class="ctl-btn" type="button" onclick="setRobotTask(2,'Normal Surface',true)"><span class="dot d-g"></span>Normal</button>
+          <button class="ctl-btn" type="button" onclick="toggleSubmenu('r2-inclined')"><span class="dot d-o"></span>Inclined <span class="arrow">></span></button>
+        </div>
+        <div class="submenu-parent" id="r2-inclined">
+          <div class="submenu">
+            <button class="sbtn" type="button" onclick="setRobotTask(2,'15 DEG',true)"><span class="dot d-y"></span>15 Degree Incline</button>
+            <button class="sbtn" type="button" onclick="setRobotTask(2,'30 DEG',true)"><span class="dot d-b"></span>30 Degree Incline</button>
+            <button class="sbtn" type="button" onclick="setRobotTask(2,'45 DEG',true)"><span class="dot d-p"></span>45 Degree Incline</button>
+          </div>
+        </div>
+        <div class="btn-cluster">
+          <button class="ctl-btn" type="button" onclick="setRobotTask(2,'DOME',true)"><span class="dot d-c"></span>Sculpture</button>
+          <button class="ctl-btn" type="button" onclick="setRobotTask(2,'COLOR_SORT',true)"><span class="dot d-p"></span>Color Sort</button>
+        </div>
+      </div>
+
+      <div class="assign-card">
+        <div class="assign-head"><div class="assign-title">Dual Quick Start</div><span class="assign-badge">Mirrored Pair</span></div>
+        <div class="btn-cluster">
+          <button class="ctl-btn" type="button" onclick="setBothTasks('Normal Surface')"><span class="dot d-g"></span>Normal On Both</button>
+          <button class="ctl-btn" type="button" onclick="setBothTasks('DOME')"><span class="dot d-c"></span>Sculpture On Both</button>
+          <button class="ctl-btn" type="button" onclick="setBothTasks('30 DEG')"><span class="dot d-b"></span>30 DEG On Both</button>
+          <button class="ctl-btn" type="button" onclick="setBothTasks('COLOR_SORT')"><span class="dot d-p"></span>Sort On Both</button>
+        </div>
+      </div>
+
+      <div class="assistant-card">
+        <div class="assign-head"><div class="assign-title">AI Assistant</div><span class="assign-badge">Scene Aware</span></div>
+        <p>The same assistant remains available on this workbench. Use the AI orb to ask about live robot state, telemetry, previews, force, slip, and what both cells are doing right now.</p>
+        <div class="assistant-actions">
+          <button class="ctl-btn primary" type="button" onclick="openAssistant()">Open Assistant</button>
+          <span class="assistant-pill">Groq ready when configured</span>
+        </div>
+        <div class="assistant-logo-row">
+          <div class="assistant-logo-chip">
+            <img src="/static/aria_bot_logo.svg" alt="">
+            <span>ARIA<br>AI</span>
+          </div>
+          <div class="assistant-logo-meta">ARIA AI bot symbol is active for the assistant identity on this workbench.</div>
+        </div>
+      </div>
+
+      <div class="status-note">Only the selected task setup is previewed for each robot when the cell is idle. That keeps unwanted workbench objects out of the main double view until you explicitly change the assignment.</div>
+      <span id="assign-status"></span>
+      <div style="height:16px"></div>
+    </div>
+  </div>
+
+  <div id="center">
+    <div id="header">
+      <button id="menu-btn" type="button" onclick="togglePanel('left')" aria-label="Menu">Menu</button>
+      <div id="project-name">Double Robot Workbench - Surface Tasks - Color Sort - Dual Cell Dashboard</div>
+      <button id="tele-tab-btn" type="button" onclick="togglePanel('right')">Telemetry</button>
+      <button id="guide-btn" type="button" onclick="openGuide()" aria-label="Instructions"><span class="guide-core">i</span></button>
+      <div id="made-by">Made by <a href="https://www.linkedin.com/in/sm980/" target="_blank">Shashwat Mishra</a></div>
+    </div>
+    <div id="video-wrap">
+      <div id="stage">
+        <div class="stage-stack">
+        <section class="hero-card">
+          <div class="hero-top">
+            <div class="hero-copy">
+              <h1>Double Robot Workbench</h1>
+              <p>Left panel se task choose karo, center me clean dual feeds dekho, aur right side par focused telemetry rakho. Layout ko intentionally simplify kiya gaya hai taki dono cells ki motion, target aur progress bina clutter ke samajh aaye.</p>
+            </div>
+            <div class="hero-actions">
+              <div class="hero-pill" id="hero-active-pill">Both Cells Ready</div>
+              <a class="hero-cta" href="/">Back to Main Dashboard</a>
+            </div>
+          </div>
+          <div class="hero-chips">
+            <div class="hero-chip"><div class="k">Robot 1</div><div class="v" id="hero-r1-copy">Left cell is idle and waiting for a task.</div></div>
+            <div class="hero-chip"><div class="k">Robot 2</div><div class="v" id="hero-r2-copy">Right cell is idle and waiting for a task.</div></div>
+            <div class="hero-chip assignment-chip"><div class="k">Assignments</div><div class="v" id="hero-assignment-copy">No active tasks. Use the left control panel to select the next setup.</div></div>
+          </div>
+        </section>
+
+        <section class="overview-card">
+          <div class="feed-head">
+            <div class="feed-title">
+              <h2>Full Cell View</h2>
+              <p>Wide overview with extra spacing so both cells stay readable during motion.</p>
+            </div>
+            <span class="feed-badge" id="overview-badge">Dual Overview</span>
+          </div>
+          <div class="stage-frame overview-frame"><img src="/double_feed/full" alt="Full double robot overview"></div>
+          <div class="robot-strip">
+            <span class="metric-chip" id="overview-chip-1">Robot 1 preview: Normal Surface</span>
+            <span class="metric-chip" id="overview-chip-2">Robot 2 preview: Normal Surface</span>
+            <span class="metric-chip" id="overview-chip-3">Selected setups only</span>
+          </div>
+        </section>
+
+        <section class="dual-grid">
+          <article class="feed-card">
+            <div class="feed-head">
+              <div class="feed-title">
+                <h3>Robot 1 Feed</h3>
+                <p id="r1-feed-copy">Left cell live focus feed with clearer robot-to-target spacing.</p>
+              </div>
+              <span class="feed-badge" id="r1-feed-badge">Left Cell</span>
+            </div>
+            <div class="stage-frame robot-frame"><img src="/double_feed/1" alt="Robot 1 live feed"></div>
+            <div class="robot-strip">
+              <span class="metric-chip" id="r1-stage-task">Task: -</span>
+              <span class="metric-chip" id="r1-stage-target">Target: -</span>
+              <span class="metric-chip" id="r1-stage-shape">Shape / Color: -</span>
+            </div>
+            <div class="preview-copy" id="r1-stage-note">Waiting for assignment.</div>
+          </article>
+
+          <article class="feed-card">
+            <div class="feed-head">
+              <div class="feed-title">
+                <h3>Robot 2 Feed</h3>
+                <p id="r2-feed-copy">Right cell live focus feed with clearer robot-to-target spacing.</p>
+              </div>
+              <span class="feed-badge" id="r2-feed-badge">Right Cell</span>
+            </div>
+          <div class="stage-frame robot-frame"><img src="/double_feed/2" alt="Robot 2 live feed"></div>
+          <div class="robot-strip">
+            <span class="metric-chip" id="r2-stage-task">Task: -</span>
+            <span class="metric-chip" id="r2-stage-target">Target: -</span>
+            <span class="metric-chip" id="r2-stage-shape">Shape / Color: -</span>
+          </div>
+          <div class="preview-copy" id="r2-stage-note">Waiting for assignment.</div>
+        </article>
+        </section>
+        </div>
+      </div>
+    </div>
+    <div id="speech-bar">
+      <span id="speech-icon">AI</span>
+      <div id="speech-text">System ready - select tasks for the left and right cells</div>
+      <button id="tts-toggle" type="button" class="on" onclick="toggleTTS()">TTS ON</button>
+    </div>
+    <div id="bottom-nav">
+      <button class="bnav-btn active" id="bnav-ctrl" type="button" onclick="mobileNav('ctrl')"><span class="bnav-icon">CTL</span>Control</button>
+      <button class="bnav-btn" id="bnav-tele" type="button" onclick="mobileNav('tele')"><span class="bnav-icon">TEL</span>Telemetry</button>
+      <button class="bnav-btn" id="bnav-chat" type="button" onclick="openAssistant()"><span class="bnav-icon">AI</span>Assistant</button>
+    </div>
+  </div>
+
+  <div id="right-panel">
+    <div class="ph">Live Telemetry<button class="ph-close" type="button" onclick="closePanel('right')">x</button></div>
+    <div id="kw-strip">
+      <span class="kw">PyBullet</span><span class="kw">Conjugate Grasp</span><span class="kw">Peg-in-Hole</span>
+      <span class="kw">Dual Robot</span><span class="kw">Vision System</span><span class="kw">FSM Control</span>
+      <span class="kw">Force / Torque</span><span class="kw">Slip Detection</span><span class="kw">Sculpture Surface</span>
+      <span class="kw">Color Sort</span><span class="kw">OpenCV</span><span class="kw">Flask</span>
+    </div>
+    <div id="aggregate-badge"><div class="led"></div><span id="aggregate-state">Both Cells Ready</span></div>
+    <div id="tele-scroll-cue" aria-hidden="true">
+      <span class="tele-scroll-copy">Scroll Down</span>
+      <span class="tele-scroll-arrows">v v</span>
+    </div>
+    <div id="tele-scroll">
+      <div class="tsec">
+        <div class="ttitle">Dual Summary</div>
+        <div class="summary-grid">
+          <div class="tele-card">
+            <div class="trow"><span class="tkey">Robot 1 State</span><span class="tval" id="sum-r1-state">IDLE</span></div>
+            <div class="trow"><span class="tkey">Robot 1 Task</span><span class="tval" id="sum-r1-task">-</span></div>
+            <div class="trow"><span class="tkey">Robot 1 Target</span><span class="tval" id="sum-r1-target">-</span></div>
+          </div>
+          <div class="tele-card">
+            <div class="trow"><span class="tkey">Robot 2 State</span><span class="tval" id="sum-r2-state">IDLE</span></div>
+            <div class="trow"><span class="tkey">Robot 2 Task</span><span class="tval" id="sum-r2-task">-</span></div>
+            <div class="trow"><span class="tkey">Robot 2 Target</span><span class="tval" id="sum-r2-target">-</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tsec">
+        <div class="ttitle">Per-Robot Detail</div>
+        <div class="tele-grid">
+          <div class="tele-card">
+            <div class="tele-head"><h3>Robot 1</h3><span class="tele-badge" id="r1-badge">IDLE</span></div>
+            <div class="trow"><span class="tkey">Mode</span><span class="tval" id="r1-mode">IDLE</span></div>
+            <div class="trow"><span class="tkey">Active Task</span><span class="tval" id="r1-active">-</span></div>
+            <div class="trow"><span class="tkey">Target</span><span class="tval" id="r1-target">-</span></div>
+            <div class="trow"><span class="tkey">Queue</span><span class="tval" id="r1-queue">0</span></div>
+            <div class="trow"><span class="tkey">Completed</span><span class="tval good" id="r1-done">0</span></div>
+            <div class="trow"><span class="tkey">Failed</span><span class="tval" id="r1-fail">0</span></div>
+            <div class="trow"><span class="tkey">Total</span><span class="tval" id="r1-total">0</span></div>
+            <div class="prog-bg"><div class="prog-fg" id="r1-prog"></div></div>
+            <div class="trow"><span class="tkey">Conjugate</span><span class="tval" id="r1-conj">-</span></div>
+            <div class="trow"><span class="tkey">Grasp Score</span><span class="tval" id="r1-gq">-</span></div>
+            <div class="trow"><span class="tkey">Vision</span><span class="tval"><span class="vision-badge" id="r1-vision-badge">No detection</span></span></div>
+            <div class="trow"><span class="tkey">Slip</span><span class="tval" id="r1-slip">OK</span></div>
+            <div class="trow"><span class="tkey">End-Effector</span><span class="tval" id="r1-ee">-</span></div>
+            <canvas class="force-canvas" id="r1-force-canvas"></canvas>
+            <div class="trow"><span class="tkey">Wrist Force</span><span class="tval" id="r1-force">-</span></div>
+            <div class="joint-bars" id="r1-joint-bars"></div>
+          </div>
+
+          <div class="tele-card">
+            <div class="tele-head"><h3>Robot 2</h3><span class="tele-badge" id="r2-badge">IDLE</span></div>
+            <div class="trow"><span class="tkey">Mode</span><span class="tval" id="r2-mode">IDLE</span></div>
+            <div class="trow"><span class="tkey">Active Task</span><span class="tval" id="r2-active">-</span></div>
+            <div class="trow"><span class="tkey">Target</span><span class="tval" id="r2-target">-</span></div>
+            <div class="trow"><span class="tkey">Queue</span><span class="tval" id="r2-queue">0</span></div>
+            <div class="trow"><span class="tkey">Completed</span><span class="tval good" id="r2-done">0</span></div>
+            <div class="trow"><span class="tkey">Failed</span><span class="tval" id="r2-fail">0</span></div>
+            <div class="trow"><span class="tkey">Total</span><span class="tval" id="r2-total">0</span></div>
+            <div class="prog-bg"><div class="prog-fg" id="r2-prog"></div></div>
+            <div class="trow"><span class="tkey">Conjugate</span><span class="tval" id="r2-conj">-</span></div>
+            <div class="trow"><span class="tkey">Grasp Score</span><span class="tval" id="r2-gq">-</span></div>
+            <div class="trow"><span class="tkey">Vision</span><span class="tval"><span class="vision-badge" id="r2-vision-badge">No detection</span></span></div>
+            <div class="trow"><span class="tkey">Slip</span><span class="tval" id="r2-slip">OK</span></div>
+            <div class="trow"><span class="tkey">End-Effector</span><span class="tval" id="r2-ee">-</span></div>
+            <canvas class="force-canvas" id="r2-force-canvas"></canvas>
+            <div class="trow"><span class="tkey">Wrist Force</span><span class="tval" id="r2-force">-</span></div>
+            <div class="joint-bars" id="r2-joint-bars"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tele-note">
+        <div>
+          Made by <a href="https://www.linkedin.com/in/sm980/" target="_blank">Shashwat Mishra</a><br>
+          <span style="font-size:9px">Double Robot Dashboard | Vision | Conjugate Grasp | Surface Tasks | Color Sort</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+var isMobile = window.innerWidth <= 1024 || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+var robotVoiceEnabled = true;
+var speechTO = null;
+var speechPinnedUntil = 0;
+var liveSpeechText = '';
+var dashboardPollBusy = false;
+var speechPollBusy = false;
+var doubleSpeechCursor = { 1: { speech: 0, sound: 0 }, 2: { speech: 0, sound: 0 } };
+var lastSpokenByRobot = { 1: { text: '', ts: 0 }, 2: { text: '', ts: 0 } };
+var lastSpokenGlobal = { text: '', ts: 0 };
+var SURFACE_PHASES = ['PICK_APPROACH','PICK_DOWN','GRASP','VERIFY_GRASP','REGRASP','LIFT','SCAN_APPROACH','SCAN','INSERT_APPROACH','INSERT_ALIGN','INSERT_PUSH','EXTRACT','RETURN_TO_PICK','RELEASE','GO_HOME'];
+var SORT_PHASES = ['SORT_PICK_APPROACH','SORT_PICK_DOWN','SORT_GRASP','SORT_REGRASP','SORT_LIFT','SORT_SCAN','SORT_APPROACH','SORT_ALIGN','SORT_INSERT','SORT_EXTRACT','SORT_RETURN','SORT_RELEASE','GO_HOME'];
+
+function id(el){ return document.getElementById(el); }
+function emptyUiValue(value){ return (value == null || value === '') ? '-' : value; }
+function prettySurfaceLabel(label){ return label === 'DOME' ? 'Sculpture Surface' : (label || '-'); }
+function formatPct(score){ return score == null ? '-' : Math.round(score * 100) + '%'; }
+function openGuide(){ id('guide-overlay').classList.add('show'); }
+function closeGuide(evt){ if(!evt || evt.target === id('guide-overlay')) id('guide-overlay').classList.remove('show'); }
+function toggleSubmenu(menuId){ id(menuId).classList.toggle('open'); }
+function syncDesktopEdges(){ if(isMobile) return; id('left-edge').style.display = id('left-panel').classList.contains('hidden') ? 'flex' : 'none'; id('right-edge').style.display = id('right-panel').classList.contains('hidden') ? 'flex' : 'none'; }
+function syncMobileNavState(){ if(!isMobile) return; var leftOpen = id('left-panel').classList.contains('show'); var rightOpen = id('right-panel').classList.contains('show'); id('bnav-ctrl').classList.toggle('active', leftOpen); id('bnav-tele').classList.toggle('active', rightOpen); id('bnav-chat').classList.remove('active'); id('tele-tab-btn').classList.toggle('active', rightOpen); }
+function togglePanel(side){ if(isMobile){ if(side === 'left'){ id('left-panel').classList.toggle('show'); id('right-panel').classList.remove('show'); } else { id('right-panel').classList.toggle('show'); id('left-panel').classList.remove('show'); } var open = id('left-panel').classList.contains('show') || id('right-panel').classList.contains('show'); id('panel-overlay').classList.toggle('show', open); syncMobileNavState(); setTimeout(syncTelemetryScrollCue, 80); return; } if(side === 'left') id('left-panel').classList.toggle('hidden'); else id('right-panel').classList.toggle('hidden'); syncDesktopEdges(); setTimeout(syncTelemetryScrollCue, 80); }
+function closePanel(side){ if(!isMobile) return; if(side === 'left') id('left-panel').classList.remove('show'); else id('right-panel').classList.remove('show'); id('panel-overlay').classList.remove('show'); syncMobileNavState(); setTimeout(syncTelemetryScrollCue, 80); }
+function closeAllPanels(){ if(!isMobile) return; id('left-panel').classList.remove('show'); id('right-panel').classList.remove('show'); id('panel-overlay').classList.remove('show'); syncMobileNavState(); setTimeout(syncTelemetryScrollCue, 80); }
+function mobileNav(tab){ if(tab === 'ctrl') togglePanel('left'); else if(tab === 'tele') togglePanel('right'); else openAssistant(); }
+function writeStatus(text, color){ id('assign-status').textContent = text; id('assign-status').style.color = color || '#00ff88'; }
+function speechLocale(text){ return /[\u0900-\u097f]/.test(text || '') ? 'hi-IN' : 'en-IN'; }
+function renderSpeechBar(text, active){ id('speech-text').classList.remove('fading'); id('speech-text').textContent = text; id('speech-icon').classList.toggle('active', !!active); }
+function showSpeech(text, pinMs){ renderSpeechBar(text, true); clearTimeout(speechTO); speechPinnedUntil = Date.now() + (pinMs || Math.min(4200, text.length * 40 + 1400)); speechTO = setTimeout(function(){ if(Date.now() >= speechPinnedUntil){ id('speech-text').classList.add('fading'); id('speech-icon').classList.remove('active'); } }, Math.min(10000, text.length * 55 + 1800)); }
+function assistantSpeechVoice(locale){ if(!('speechSynthesis' in window)) return null; var voices = window.speechSynthesis.getVoices() || []; var patterns = locale === 'hi-IN' ? [/hi[-_]?IN/i,/hindi/i,/en[-_]?IN/i,/india/i] : [/en[-_]?IN/i,/india/i,/hi[-_]?IN/i,/hindi/i,/en/i]; for(var i = 0; i < patterns.length; i += 1){ var voice = voices.find(function(item){ return patterns[i].test((item.lang || '') + ' ' + (item.name || '')); }); if(voice) return voice; } return voices.find(function(item){ return /en|hi/i.test(item.lang || ''); }) || voices[0] || null; }
+function speakStatus(text, priority){ if(!robotVoiceEnabled || !text || !('speechSynthesis' in window)) return; try{ window.speechSynthesis.cancel(); var msg = new SpeechSynthesisUtterance(text); msg.lang = speechLocale(text); msg.rate = 1.03; msg.pitch = 1.0; var voice = assistantSpeechVoice(msg.lang); if(voice) msg.voice = voice; window.speechSynthesis.speak(msg); }catch(err){} }
+function setTTS(on){ robotVoiceEnabled = !!on; if(!robotVoiceEnabled && 'speechSynthesis' in window){ try{ window.speechSynthesis.cancel(); }catch(err){} } id('tts-toggle').classList.toggle('on', robotVoiceEnabled); id('tts-toggle').textContent = robotVoiceEnabled ? 'TTS ON' : 'TTS OFF'; }
+function toggleTTS(){ setTTS(!robotVoiceEnabled); }
+function normalizeSpeechKey(text){ return String(text || '').toLowerCase().replace(/\s+/g, ' ').replace(/[^\w\u0900-\u097f ]+/g, '').trim(); }
+function robotNeutralSpeechKey(text){ return normalizeSpeechKey(text).replace(/^robot\s+\d+\s*/i, '').trim(); }
+function shouldSpeakRobotLine(robotId, text){
+  var now = Date.now();
+  var key = normalizeSpeechKey(text);
+  var neutralKey = robotNeutralSpeechKey(text);
+  var last = lastSpokenByRobot[robotId] || { text: '', ts: 0 };
+  if(!key) return false;
+  if(last.text === key && (now - last.ts) < 6000) return false;
+  if(neutralKey && lastSpokenGlobal.text === neutralKey && (now - lastSpokenGlobal.ts) < 6000) return false;
+  lastSpokenByRobot[robotId] = { text: key, ts: now };
+  if(neutralKey) lastSpokenGlobal = { text: neutralKey, ts: now };
+  return true;
+}
+function syncSpeechFromState(payload){ if(Date.now() < speechPinnedUntil) return; var r1 = (payload && payload.robot1) || {}; var r2 = (payload && payload.robot2) || {}; var line = 'Robot 1 ' + (r1.state || 'IDLE') + ' | Robot 2 ' + (r2.state || 'IDLE'); if(line !== liveSpeechText){ liveSpeechText = line; renderSpeechBar(line, false); } else { renderSpeechBar(line, false); } }
+function openAssistant(){ var fab = document.getElementById('aria-mini-fab'); if(fab){ fab.click(); return; } writeStatus('Assistant is still loading on this page.', '#ffd7a3'); }
+function sendCmd(rid, cmd){ return fetch('/double_command', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ robot:String(rid), cmd:cmd }) }); }
+function selectedTaskId(rid){ return rid === 1 ? 'r1-task' : 'r2-task'; }
+function setRobotTask(rid, task, startNow){ id(selectedTaskId(rid)).value = task; syncPreview(); if(startNow) startRobot(rid, task); }
+function setBothTasks(task){ id('r1-task').value = task; id('r2-task').value = task; syncPreview(); writeStatus('Both selectors updated to ' + prettySurfaceLabel(task) + '.', '#00ff88'); }
+function startRobotFromSelect(rid){ startRobot(rid, id(selectedTaskId(rid)).value); }
+function startRobot(rid, task){ sendCmd(rid, task).then(function(r){ return r.json(); }).then(function(data){ if(data && data.accepted === false){ var warning = 'Robot ' + rid + ' is busy in state ' + (data.state || 'BUSY') + '.'; writeStatus(warning, '#ffd7a3'); showSpeech(warning, 2600); speakStatus(warning, 'high'); return; } var note = 'Robot ' + rid + ' started ' + prettySurfaceLabel(task) + '.'; writeStatus(note, '#00ff88'); showSpeech(note, 2200); if(isMobile) closeAllPanels(); }).catch(function(){ writeStatus('Robot ' + rid + ' start failed.', '#ff8b8b'); showSpeech('Robot ' + rid + ' start failed.', 2200); }); }
+function startBoth(){ fetch('/double_assign', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ robot1:id('r1-task').value, robot2:id('r2-task').value }) }).then(function(r){ return r.json(); }).then(function(data){ if(data && data.status === 'partial'){ var parts = []; if(data.robot1_result && data.robot1_result.accepted === false) parts.push('Robot 1 busy'); if(data.robot2_result && data.robot2_result.accepted === false) parts.push('Robot 2 busy'); var warning = parts.length ? parts.join(' | ') : 'One robot rejected the command.'; writeStatus(warning, '#ffd7a3'); showSpeech(warning, 2600); speakStatus(warning, 'high'); return; } var ok = 'Both robot assignments submitted.'; writeStatus(ok, '#00ff88'); showSpeech(ok, 2200); if(isMobile) closeAllPanels(); }).catch(function(){ writeStatus('Dual start failed.', '#ff8b8b'); showSpeech('Dual start failed.', 2200); }); }
+function stopBoth(){ Promise.all([sendCmd(1,'E_STOP'), sendCmd(2,'E_STOP')]).then(function(){ writeStatus('Emergency stop sent to both robots.', '#ffd7a3'); showSpeech('Emergency stop sent to both robots.', 2600); }).catch(function(){ writeStatus('Emergency stop failed for one or both robots.', '#ff8b8b'); showSpeech('Emergency stop failed for one or both robots.', 2600); }); }
+function resetBoth(){ fetch('/double_reset', { method:'POST' }).then(function(){ writeStatus('Both robots reset.', '#00ff88'); showSpeech('Both robots reset.', 2200); syncPreview(); if(isMobile) closeAllPanels(); }).catch(function(){ writeStatus('Reset failed.', '#ff8b8b'); showSpeech('Reset failed.', 2200); }); }
+function syncPreview(){ return fetch('/double_preview', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ robot1:id('r1-task').value, robot2:id('r2-task').value }) }).catch(function(){}); }
+function stateTone(state){ if(state === 'IDLE') return { badge:'#00ff88' }; if(/STOP|FAIL|RECOVERY/i.test(state || '')) return { badge:'#ff8b8b' }; if(/QUEUE|WAIT/i.test(state || '')) return { badge:'#ffd7a3' }; return { badge:'#00d4ff' }; }
+function phaseProgress(state, mode, stats, hasPreview, hasActive){ var done = stats.completed || 0; var fail = stats.failed || 0; var total = stats.total || 0; if(hasActive && state && state !== 'IDLE'){ var phases = (/^SORT/.test(state) || /COLOR/.test(mode || '')) ? SORT_PHASES : SURFACE_PHASES; var idx = phases.indexOf(state); if(idx >= 0) return Math.max(6, Math.min(96, ((idx + 1) / phases.length) * 100)); if(/RECOVERY/i.test(state)) return 72; if(/FAIL|STOP/i.test(state)) return 100; return 18; } if(hasPreview && !hasActive) return 12; if(total > 0 && (done + fail) >= total) return 100; return 0; }
+function setVisionBadge(elId, vision){ var el = id(elId); if(!vision || !vision.color){ el.innerHTML = 'No detection'; el.style.borderColor = '#333'; el.style.color = '#c6d8ea'; return; } var colors = { pink:'#ff0066', red:'#ff0066', yellow:'#ffcc00', cyan:'#00ccff', orange:'#ff8800', blue:'#3366ff', green:'#00cc44' }; var bg = colors[vision.color] || '#444'; el.style.borderColor = bg; el.style.color = '#fff'; el.innerHTML = '<span class="vswatch" style="background:' + bg + '"></span>' + String(vision.color).toUpperCase() + ' / ' + String(vision.shape || 'UNKNOWN').toUpperCase(); }
+function drawForceChart(canvasId, history){ var canvas = id(canvasId); if(!canvas) return; var width = canvas.offsetWidth || 280; var height = 64; canvas.width = width; canvas.height = height; var ctx = canvas.getContext('2d'); ctx.fillStyle = '#070b10'; ctx.fillRect(0, 0, width, height); if(!history || history.length < 2) return; var maxForce = Math.max(30, Math.max.apply(null, history.map(function(item){ return item.force_N || 0; }))); ctx.beginPath(); ctx.strokeStyle = '#00d4ff'; ctx.lineWidth = 1.6; history.forEach(function(point, idx){ var x = (idx / (history.length - 1)) * width; var y = height - (((point.force_N || 0) / maxForce) * (height - 8)) - 4; if(idx === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); }); ctx.stroke(); ctx.fillStyle = '#5a6a80'; ctx.font = '9px monospace'; ctx.fillText('max ' + maxForce.toFixed(0) + 'N', 4, 10); }
+function renderJointBars(hostId, joints){ var host = id(hostId); if(!host) return; if(!joints || !joints.length){ host.innerHTML = ''; return; } host.innerHTML = joints.slice(0, 7).map(function(joint, idx){ var pos = joint.position_rad || 0; var pct = Math.min(100, Math.max(0, ((pos + Math.PI) / (2 * Math.PI)) * 100)); return '<div class="jrow"><div class="jlabel"><span>J' + (idx + 1) + '</span><span>' + pos.toFixed(3) + '</span></div><div class="jbg"><div class="jfg" style="width:' + pct + '%"></div></div></div>'; }).join(''); }
+function renderRobot(prefix, payload){ payload = payload || {}; var state = payload.state || 'IDLE'; var summary = payload.summary || {}; var stats = payload.task_stats || {}; var telemetry = payload.telemetry || {}; var tone = stateTone(state); var previewTask = summary.preview_task || ''; var activeTask = summary.active_task || ''; var task = activeTask || previewTask || '-'; var target = summary.target_zone || summary.current_surface || summary.focused_surface || ''; if(!target && previewTask && previewTask !== 'COLOR_SORT') target = prettySurfaceLabel(previewTask); if(!target && previewTask === 'COLOR_SORT') target = 'Color Sort'; target = emptyUiValue(prettySurfaceLabel(target)); var modeRaw = activeTask ? (summary.mode || 'idle') : (summary.preview_mode || summary.mode || 'idle'); var mode = String(modeRaw || 'idle').replace(/_/g, ' ').toUpperCase(); var shapeBits = []; if(summary.current_shape) shapeBits.push(String(summary.current_shape).toUpperCase()); if(summary.current_color) shapeBits.push(String(summary.current_color).toUpperCase()); var shapeLine = shapeBits.length ? shapeBits.join(' / ') : '-'; var pct = phaseProgress(state, mode, stats, !!previewTask, !!activeTask); var badge = id(prefix + '-badge'); badge.textContent = state; badge.style.color = tone.badge; badge.style.borderColor = tone.badge; id(prefix + '-mode').textContent = mode; id(prefix + '-active').textContent = task; id(prefix + '-target').textContent = target; id(prefix + '-queue').textContent = stats.queue_remaining || summary.queue_remaining || 0; id(prefix + '-done').textContent = stats.completed || 0; id(prefix + '-fail').textContent = stats.failed || 0; id(prefix + '-total').textContent = stats.total || 0; id(prefix + '-prog').style.width = pct.toFixed(1) + '%'; id(prefix + '-conj').textContent = payload.conjugate && payload.conjugate.active ? [payload.conjugate.shape, payload.conjugate.contact, payload.conjugate.closure].filter(Boolean).join(' / ') : '-'; id(prefix + '-gq').textContent = formatPct(payload.grasp_quality && payload.grasp_quality.quality_score); setVisionBadge(prefix + '-vision-badge', payload.vision); var slip = payload.slip || {}; var slipEl = id(prefix + '-slip'); slipEl.textContent = slip.drift_mm != null ? ((slip.slipped ? 'SLIP ' : 'OK ') + '(' + slip.drift_mm.toFixed(1) + ' mm)') : 'OK'; slipEl.className = 'tval ' + (slip.slipped ? 'bad' : 'good'); var ee = telemetry.end_effector && telemetry.end_effector.position; id(prefix + '-ee').textContent = ee ? (ee.x.toFixed(3) + ', ' + ee.y.toFixed(3) + ', ' + ee.z.toFixed(3)) : '-'; var wrist = telemetry.wrist_ft || {}; id(prefix + '-force').textContent = wrist.force_magnitude_N != null ? (Number(wrist.force_magnitude_N).toFixed(1) + ' N / ' + Number(wrist.torque_magnitude_Nm || 0).toFixed(3) + ' Nm') : '-'; drawForceChart(prefix + '-force-canvas', payload.force_history || telemetry.force_history || []); renderJointBars(prefix + '-joint-bars', telemetry.joints || []); id(prefix + '-stage-task').textContent = 'Task: ' + task; id(prefix + '-stage-target').textContent = 'Target: ' + target; id(prefix + '-stage-shape').textContent = 'Shape / Color: ' + shapeLine; id(prefix + '-stage-note').textContent = task === '-' ? 'Waiting for assignment.' : ((activeTask ? 'Active task: ' : 'Preview task: ') + task + ' focused on ' + target + '.'); id(prefix + '-feed-copy').textContent = activeTask ? ('Active state: ' + state + ' with live ' + task + ' motion.') : ('Previewing ' + task + ' while the cell is idle.'); return { state: state, task: task, target: target, shapeLine: shapeLine }; }
+function renderSummary(data){ var r1 = renderRobot('r1', data.robot1 || {}); var r2 = renderRobot('r2', data.robot2 || {}); id('sum-r1-state').textContent = r1.state; id('sum-r1-task').textContent = r1.task; id('sum-r1-target').textContent = r1.target; id('sum-r2-state').textContent = r2.state; id('sum-r2-task').textContent = r2.task; id('sum-r2-target').textContent = r2.target; id('hero-r1-copy').textContent = r1.task === '-' ? 'Left cell idle hai.' : ('Left cell: ' + r1.task + ' on ' + r1.target + '.'); id('hero-r2-copy').textContent = r2.task === '-' ? 'Right cell idle hai.' : ('Right cell: ' + r2.task + ' on ' + r2.target + '.'); id('hero-assignment-copy').textContent = 'R1: ' + r1.task + '  |  R2: ' + r2.task; id('overview-chip-1').textContent = 'Robot 1: ' + r1.task; id('overview-chip-2').textContent = 'Robot 2: ' + r2.task; id('overview-chip-3').textContent = (r1.target !== '-' || r2.target !== '-') ? ('Targets: ' + r1.target + ' | ' + r2.target) : 'Selected setups only'; id('r1-feed-badge').textContent = r1.state; id('r1-feed-badge').style.color = stateTone(r1.state).badge; id('r1-feed-badge').style.borderColor = stateTone(r1.state).badge; id('r2-feed-badge').textContent = r2.state; id('r2-feed-badge').style.color = stateTone(r2.state).badge; id('r2-feed-badge').style.borderColor = stateTone(r2.state).badge; var aggregate = (data && data.aggregate) || {}; var activeCount = aggregate.active_count || 0; var aggLine = activeCount > 0 ? (activeCount + ' cell(s) active') : 'Both Cells Ready'; id('aggregate-state').textContent = aggLine; id('hero-active-pill').textContent = aggLine; }
+function pollDashboard(){ if(dashboardPollBusy) return; dashboardPollBusy = true; fetch('/double_dashboard_data').then(function(r){ return r.json(); }).then(function(data){ renderSummary(data || {}); syncSpeechFromState(data || {}); syncTelemetryScrollCue(); }).catch(function(){ writeStatus('Live dashboard data unavailable right now.', '#ff8b8b'); }).finally(function(){ dashboardPollBusy = false; }); }
+function pollSpeech(){ if(speechPollBusy) return; speechPollBusy = true; var qs = '?r1_speech_seq=' + doubleSpeechCursor[1].speech + '&r1_sound_seq=' + doubleSpeechCursor[1].sound + '&r2_speech_seq=' + doubleSpeechCursor[2].speech + '&r2_sound_seq=' + doubleSpeechCursor[2].sound; fetch('/double_speech_events' + qs).then(function(r){ return r.json(); }).then(function(data){ ['robot1','robot2'].forEach(function(key, index){ var robotId = index + 1; var block = data[key] || {}; (block.speeches || []).forEach(function(item){ if(item.seq > doubleSpeechCursor[robotId].speech){ doubleSpeechCursor[robotId].speech = item.seq; var spoken = 'Robot ' + robotId + ': ' + item.text; if(shouldSpeakRobotLine(robotId, spoken)){ writeStatus(spoken, item.priority === 'high' ? '#ffd7a3' : '#00ff88'); showSpeech(spoken, item.priority === 'high' ? 3200 : 2200); speakStatus(spoken, item.priority); } } }); if(block.speech_seq > doubleSpeechCursor[robotId].speech) doubleSpeechCursor[robotId].speech = block.speech_seq; if(block.sound_seq > doubleSpeechCursor[robotId].sound) doubleSpeechCursor[robotId].sound = block.sound_seq; }); }).catch(function(){}).finally(function(){ speechPollBusy = false; }); }
+function syncTelemetryScrollCue(){ var scroll = id('tele-scroll'); var cue = id('tele-scroll-cue'); if(!scroll || !cue) return; var max = scroll.scrollHeight - scroll.clientHeight; cue.classList.toggle('show', max > 36 && scroll.scrollTop < 22); }
+function openInitialState(){ if(isMobile){ id('left-panel').classList.remove('hidden'); id('right-panel').classList.remove('hidden'); id('left-panel').classList.remove('show'); id('right-panel').classList.remove('show'); id('panel-overlay').classList.remove('show'); syncMobileNavState(); } else { id('left-panel').classList.remove('hidden'); id('right-panel').classList.remove('hidden'); syncDesktopEdges(); } }
+window.addEventListener('resize', function(){ isMobile = window.innerWidth <= 1024 || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches); openInitialState(); syncTelemetryScrollCue(); pollDashboard(); });
+id('r1-task').addEventListener('change', syncPreview);
+id('r2-task').addEventListener('change', syncPreview);
+id('tele-scroll').addEventListener('scroll', syncTelemetryScrollCue, { passive: true });
+document.addEventListener('keydown', function(event){ if(event.key === 'Escape') closeGuide(); if(event.key === '[') togglePanel('left'); if(event.key === ']') togglePanel('right'); });
+openInitialState();
+setTTS(true);
+syncPreview();
+pollDashboard();
+pollSpeech();
+setInterval(pollDashboard, 650);
+setInterval(pollSpeech, 260);
+</script>
+<script>
+window.ARIA_WIDGET_CONTEXT = {
+  page_name: 'Double Robot Workbench',
+  hint: 'Robot 1 owns the left cell and Robot 2 owns the right cell. The top overview shows both together, while the lower feeds track each robot separately.',
+  instructions: 'Use the left control panel for per-robot surface and color sort task launch, the center stage for live motion, and the right telemetry panel for both robots.'
+};
+window.ARIA_WIDGET_FEED_SELECTOR = '.stage-frame img';
+</script>
+<script src="{{ url_for('static', filename='aria_widget.js') }}"></script>
+</body>
+</html>

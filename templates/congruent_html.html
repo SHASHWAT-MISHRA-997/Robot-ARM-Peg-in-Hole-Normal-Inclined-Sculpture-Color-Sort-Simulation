@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Congruent Surface Workbench</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+<style>
+:root{
+  --accent:#ff9f43;--accent2:#00ff88;--accent3:#00d4ff;
+  --danger:#ff4b2b;--purple:#cc66ff;
+  --glass:rgba(10,10,16,0.90);
+  --border:rgba(255,159,67,0.28);
+  --bl:rgba(255,255,255,0.07);
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html,body{width:100%;height:100%;background:#000;color:#e0e0e0;
+  font-family:'Segoe UI',system-ui,sans-serif;overflow:hidden;}
+
+/* ── Layout ── */
+.layout{width:100vw;height:100vh;display:grid;grid-template-rows:52px auto 1fr auto;}
+
+/* ── Header ── */
+.hdr{display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;background:var(--glass);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);}
+.hdr-left{display:flex;align-items:center;gap:14px;}
+.hdr h1{color:var(--accent);font-size:0.95rem;font-weight:900;letter-spacing:2px;}
+.back-btn{display:inline-flex;align-items:center;gap:6px;
+  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);
+  color:#aaa;padding:5px 13px;border-radius:8px;cursor:pointer;
+  font-size:0.76rem;font-weight:600;text-decoration:none;transition:all 0.22s;}
+.back-btn:hover{background:rgba(0,212,255,0.12);color:#00d4ff;border-color:rgba(0,212,255,0.4);}
+.hdr-actions{display:flex;gap:8px;}
+.bench-strip{display:flex;gap:10px;flex-wrap:wrap;padding:10px 20px 0;background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);}
+.bench-link{display:inline-flex;align-items:center;text-decoration:none;padding:9px 14px;border-radius:999px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:#d7d8df;font-size:0.74rem;font-weight:800;letter-spacing:0.4px;transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease,color .16s ease,background .16s ease;}
+.bench-link:hover{transform:translateY(-1px);color:#fff;border-color:rgba(255,159,67,0.30);box-shadow:0 0 16px rgba(255,159,67,0.15);background:rgba(255,159,67,0.06);}
+.bench-link.active{color:#1b0b02;background:linear-gradient(135deg,#ff9f43,#ffd48a);border-color:transparent;box-shadow:0 10px 22px rgba(255,159,67,0.18);}
+.hbtn{display:inline-flex;align-items:center;gap:5px;padding:5px 14px;
+  border-radius:8px;cursor:pointer;font-size:0.76rem;font-weight:700;
+  border:1px solid;transition:all 0.2s;background:transparent;}
+.hbtn-mute{color:#00d4ff;border-color:rgba(0,212,255,0.35);background:rgba(0,212,255,0.07);}
+.hbtn-mute:hover{background:rgba(0,212,255,0.18);}
+.hbtn-mute.muted{color:#ff4b2b;border-color:rgba(255,75,43,0.4);background:rgba(255,75,43,0.08);}
+.hbtn-reset{color:#ff4b2b;border-color:rgba(255,75,43,0.3);background:rgba(255,75,43,0.06);}
+.hbtn-reset:hover{background:rgba(255,75,43,0.18);}
+.help-orb{position:relative;width:44px;height:44px;border:none;border-radius:50%;background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.30),rgba(255,159,67,.18) 36%,rgba(14,12,12,.94) 72%);color:#fff5e8;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 10px 28px rgba(0,0,0,.34),inset 0 0 18px rgba(255,159,67,.18);transition:transform .18s ease,box-shadow .18s ease;overflow:visible;}
+.help-orb::before{content:'';position:absolute;inset:-6px;border-radius:50%;border:1px solid rgba(255,159,67,.20);border-top-color:rgba(255,255,255,.92);animation:guideSpin 4.7s linear infinite;}
+.help-orb::after{content:'';position:absolute;inset:-12px;border-radius:50%;background:radial-gradient(circle,rgba(255,159,67,.22),rgba(255,159,67,0) 68%);animation:guidePulse 1.8s ease-in-out infinite;}
+.help-orb span{position:relative;z-index:1;font-size:15px;font-weight:900;letter-spacing:.4px;text-shadow:0 0 12px rgba(255,255,255,.24);}
+.help-orb:hover{transform:translateY(-1px) scale(1.04);box-shadow:0 0 18px rgba(255,159,67,.24),0 0 28px rgba(0,212,255,.14),inset 0 0 20px rgba(255,159,67,.20);}
+
+/* ── Video ── */
+.vid{position:relative;background:#020406;display:flex;
+  align-items:center;justify-content:center;overflow:hidden;min-height:0;}
+.vid img{width:100%;height:100%;object-fit:contain;display:block;}
+.vid-badges{position:absolute;top:10px;left:10px;display:flex;gap:6px;z-index:10;flex-wrap:wrap;}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;
+  border-radius:14px;font-size:0.56rem;font-weight:700;letter-spacing:0.6px;
+  text-transform:uppercase;backdrop-filter:blur(6px);}
+.b-cg  {background:rgba(255,159,67,0.12);color:var(--accent); border:1px solid rgba(255,159,67,0.4);}
+.b-math{background:rgba(0,212,255,0.10); color:#00d4ff;        border:1px solid rgba(0,212,255,0.35);}
+.b-nurbs{background:rgba(204,102,255,0.10);color:var(--purple);border:1px solid rgba(204,102,255,0.35);}
+.state-chip{position:absolute;bottom:10px;right:10px;
+  display:flex;align-items:center;gap:7px;padding:5px 13px;border-radius:8px;
+  background:rgba(0,0,0,0.80);backdrop-filter:blur(8px);
+  border:1px solid rgba(255,159,67,0.3);
+  font-size:0.70rem;font-weight:800;color:var(--accent);letter-spacing:1px;z-index:10;}
+.led{width:8px;height:8px;border-radius:50%;background:var(--accent);
+  box-shadow:0 0 8px var(--accent);animation:blink 2s infinite;}
+@keyframes blink{0%,100%{opacity:.3}50%{opacity:1}}
+.surf-chip{position:absolute;bottom:10px;left:10px;
+  display:none;align-items:center;gap:7px;padding:5px 13px;border-radius:8px;
+  background:rgba(0,0,0,0.80);backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,0.14);
+  font-size:0.76rem;font-weight:800;letter-spacing:1px;z-index:10;}
+.surf-chip.vis{display:flex;}
+.chip-dot{width:11px;height:11px;border-radius:50%;border:2px solid rgba(255,255,255,0.2);}
+.sub-wrap{position:absolute;bottom:50px;left:50%;transform:translateX(-50%);
+  max-width:80%;z-index:20;pointer-events:none;}
+.subtitle{background:rgba(0,0,0,0.90);backdrop-filter:blur(12px);
+  border:1px solid rgba(255,159,67,0.35);border-radius:10px;
+  padding:9px 16px;font-size:0.80rem;font-weight:600;color:#eee;
+  text-align:center;display:none;}
+.subtitle.vis{display:block;animation:sub-in 0.25s ease;}
+@keyframes sub-in{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Bottom panel ── */
+.bot{background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-top:1px solid var(--bl);padding:8px 20px 10px;
+  display:flex;flex-direction:column;gap:7px;}
+.setup-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+.setup-card{padding:10px 12px;border-radius:10px;background:linear-gradient(180deg,rgba(255,159,67,0.08),rgba(0,0,0,0.14));border:1px solid rgba(255,159,67,0.14);}
+.setup-k{font-size:0.54rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#ffb36a;margin-bottom:5px;}
+.setup-v{font-size:0.68rem;line-height:1.45;color:#d5d8dd;}
+.guide-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;}
+.guide-step{padding:10px 12px;border-radius:10px;background:linear-gradient(180deg,rgba(0,212,255,0.08),rgba(0,0,0,0.14));border:1px solid rgba(0,212,255,0.14);}
+.guide-step b{display:block;font-size:0.54rem;letter-spacing:1px;text-transform:uppercase;color:#8cdcff;margin-bottom:5px;}
+.guide-step span{display:block;font-size:0.68rem;line-height:1.45;color:#d5d8dd;}
+
+#cg-guide{display:none;position:fixed;inset:0;z-index:260;background:rgba(4,8,14,.22);backdrop-filter:blur(6px);align-items:center;justify-content:center;}
+#cg-guide.show{display:flex;}
+#cg-guide-box{position:relative;width:min(920px,calc(100vw - 24px));max-height:min(82vh,calc(100vh - 24px));overflow:auto;background:linear-gradient(180deg,rgba(12,18,29,.68),rgba(8,13,22,.48));border:1px solid rgba(255,159,67,0.20);border-radius:24px;padding:20px 20px 18px;box-shadow:0 24px 70px rgba(0,0,0,.45);backdrop-filter:blur(18px);}
+#cg-guide-box::before{content:'';position:absolute;inset:0;border-radius:24px;background:linear-gradient(120deg,rgba(255,255,255,.08),rgba(255,255,255,0) 40%,rgba(255,159,67,.06));pointer-events:none;}
+#cg-guide-box h2{color:#fff4ea;font-size:1.5rem;line-height:1.15;letter-spacing:.4px;margin-bottom:8px;max-width:720px;}
+#cg-guide-box p{color:#c7d7e6;font-size:0.80rem;line-height:1.75;margin-bottom:12px;max-width:760px;}
+.cg-guide-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+.cg-guide-item{padding:14px;border-radius:16px;background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.03));border:1px solid rgba(255,255,255,0.08);}
+.cg-guide-item b{display:block;color:#fff;font-size:0.82rem;margin-bottom:6px;}
+.cg-guide-item span{display:block;color:#c3d3e2;font-size:0.72rem;line-height:1.7;}
+.cg-guide-close{margin-top:14px;display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border:none;border-radius:10px;cursor:pointer;font-weight:700;color:#061018;background:linear-gradient(135deg,#ffcc7a,#ff9f43);}
+@keyframes guideSpin{to{transform:rotate(360deg)}}
+@keyframes guidePulse{0%,100%{filter:brightness(1);box-shadow:0 0 0 rgba(255,255,255,0)}50%{filter:brightness(1.15);box-shadow:0 0 16px rgba(255,255,255,.18),0 0 24px rgba(255,159,67,.34),0 0 30px rgba(0,212,255,.18)}}
+
+/* status row */
+.stat-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.mode-badge{padding:3px 11px;border-radius:6px;font-size:0.68rem;
+  font-weight:900;letter-spacing:1px;text-transform:uppercase;}
+.m-idle{background:rgba(100,100,100,0.18);color:#666;border:1px solid #444;}
+.m-act {background:rgba(255,159,67,0.12); color:var(--accent);
+  border:1px solid rgba(255,159,67,0.4);animation:blink 1.5s infinite;}
+.m-done{background:rgba(0,212,255,0.12);  color:#00d4ff;border:1px solid rgba(0,212,255,0.4);}
+.prog-txt{font-size:0.86rem;font-weight:800;color:var(--accent);min-width:44px;}
+.prog-bar{flex:1;min-width:90px;height:6px;background:rgba(255,255,255,0.06);
+  border-radius:3px;overflow:hidden;}
+.prog-fill{height:100%;border-radius:3px;
+  background:linear-gradient(90deg,#ff9f43,#00d4ff);transition:width 0.5s;width:0;}
+.stats{display:flex;gap:12px;font-size:0.68rem;color:#777;}
+.stats b{color:#ddd;font-weight:700;}
+.fail{color:#ff6666!important;}
+
+/* math strip */
+.math-strip{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;
+  padding:6px 11px;border-radius:7px;
+  background:rgba(0,212,255,0.03);border:1px solid rgba(0,212,255,0.09);}
+.mi{display:flex;flex-direction:column;gap:1px;}
+.mi-lbl{font-size:0.50rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:0.7px;color:#3a4a5e;font-family:'Courier New',monospace;}
+.mi-val{font-size:0.65rem;font-weight:700;font-family:'Courier New',monospace;
+  color:#00d4ff;min-width:64px;}
+.mi-val.pos {color:#00ff88;}
+.mi-val.neg {color:#ff6b4a;}
+.mi-val.zero{color:#445;}
+.mdiv{width:1px;background:rgba(255,255,255,0.06);align-self:stretch;margin:0 1px;}
+
+/* pipeline */
+.pipeline{display:flex;align-items:center;padding:5px 9px;border-radius:7px;
+  background:rgba(255,159,67,0.03);border:1px solid rgba(255,159,67,0.09);
+  overflow-x:auto;}
+.ps{display:flex;flex-direction:column;align-items:center;gap:2px;
+  min-width:64px;padding:4px 3px;border-radius:5px;
+  font-size:0.52rem;font-weight:700;letter-spacing:0.4px;
+  text-transform:uppercase;color:#333;transition:all 0.22s;}
+.ps .pi{font-size:0.88rem;opacity:0.4;}
+.ps.act    {color:#00ff96;background:rgba(0,255,150,0.08);}
+.ps.act .pi{opacity:1;}
+.ps.done   {color:#00d4ff;}
+.ps.done .pi{opacity:0.8;}
+.pa{color:#2a2a2a;font-size:0.8rem;margin:0 1px;flex-shrink:0;}
+
+/* surface cards */
+.surfaces{display:flex;gap:7px;}
+.sc{flex:1;border-radius:9px;padding:8px 11px;
+  background:rgba(255,255,255,0.022);border:1px solid rgba(255,255,255,0.07);
+  transition:all 0.22s;display:flex;align-items:center;gap:9px;
+  cursor:pointer;min-width:0;}
+.sc:hover {border-color:rgba(255,159,67,0.45);background:rgba(255,159,67,0.05);transform:translateY(-1px);}
+.sc.s-act {border-color:rgba(0,255,150,0.55);box-shadow:0 0 12px rgba(0,255,150,0.06);}
+.sc.s-done{border-color:rgba(0,212,255,0.42);}
+.sc:active{transform:scale(0.98);}
+.sc-ico{font-size:1.3rem;flex-shrink:0;line-height:1;}
+.sc-body{flex:1;min-width:0;}
+.sc-name{font-size:0.64rem;font-weight:900;letter-spacing:0.8px;
+  text-transform:uppercase;white-space:nowrap;}
+.sc-name.cg{color:#00ff88;}
+.sc-name.cy{color:#ffcc00;}
+.sc-name.co{color:#ff9f43;}
+.sc-name.cr{color:#ff6b4a;}
+.sc-name.cp{color:#cc66ff;}
+.sc-desc{font-size:0.52rem;color:#444;margin-top:1px;}
+.sc-curv{font-size:0.50rem;color:#333;margin-top:2px;font-family:'Courier New',monospace;}
+.sc-ico-status{font-size:0.85rem;flex-shrink:0;}
+
+@media(max-width:900px){
+  html,body{overflow:auto;min-height:100%;}
+  .layout{height:auto;min-height:100dvh;grid-template-rows:auto auto minmax(300px,48dvh) auto;}
+  .hdr{padding:10px 14px;align-items:flex-start;gap:10px;flex-wrap:wrap;}
+  .hdr-left,.hdr-actions{flex-wrap:wrap;}
+  .hdr h1{font-size:0.88rem;letter-spacing:1.2px;}
+  .bench-strip{padding:10px 14px 0;}
+  .vid{min-height:min(48dvh,420px);padding:6px 0;}
+  .vid img{object-fit:contain;object-position:center center;}
+  .bot{padding:10px 14px 16px;}
+  .setup-grid{grid-template-columns:1fr;}
+  .guide-steps{grid-template-columns:1fr;}
+  .cg-guide-list{grid-template-columns:1fr;}
+  .surfaces{flex-wrap:wrap;}
+  .sc{min-width:120px;}
+  .math-strip{gap:8px;}
+}
+</style>
+</head>
+<body>
+<div id="cg-guide" onclick="closeGuide(event)">
+  <div id="cg-guide-box" onclick="event.stopPropagation()">
+    <h2>Congruent cell briefing for curvature-aware insertion.</h2>
+    <p>This operator guide stays transparent so the live simulation remains visible. Launch a surface from the cards below, monitor the math strip and pipeline while the run executes, then reset when you want the robot back in a clean idle state.</p>
+    <div class="cg-guide-list">
+      <div class="cg-guide-item"><b>Surface launch</b><span>Use the bottom surface cards to trigger Normal, 15 DEG, 30 DEG, 45 DEG, or Sculpture. Each card selects a different hole geometry and motion profile.</span></div>
+      <div class="cg-guide-item"><b>Geometry watch</b><span>Read Gaussian K, Mean H, principal curvatures, closure, and grasp quality to understand how the contact strategy changes as the surface changes.</span></div>
+      <div class="cg-guide-item"><b>Insertion trace</b><span>The pipeline and state badge expose where the robot is in pick, verify, align, insert, extract, return, and home, so the sequence stays readable.</span></div>
+      <div class="cg-guide-item"><b>Reset discipline</b><span>Use RESET in the header when you want a fresh run. That returns the cell to idle before the next curvature case is started.</span></div>
+    </div>
+    <button class="cg-guide-close" onclick="closeGuide()">Close Guide</button>
+  </div>
+</div>
+<div class="layout">
+
+<!-- ════════════════════ HEADER ════════════════════ -->
+<div class="hdr">
+  <div class="hdr-left">
+    <a class="back-btn" href="/"><i class="fas fa-arrow-left"></i> Main Simulation</a>
+    <h1><i class="fas fa-bezier-curve"></i> &nbsp;CONGRUENT SURFACE WORKBENCH</h1>
+  </div>
+  <div class="hdr-actions">
+    <button class="help-orb" type="button" onclick="openGuide()" aria-label="Open guide"><span>i</span></button>
+    <button class="hbtn hbtn-mute" id="btn-mute" onclick="toggleMute()">
+      <i class="fas fa-volume-up" id="mute-ic"></i>
+      <span id="mute-lbl">SOUND ON</span>
+    </button>
+    <button class="hbtn hbtn-reset" onclick="doReset()">
+      <i class="fas fa-undo"></i> RESET
+    </button>
+  </div>
+</div>
+
+<!-- ════════════════════ VIDEO ════════════════════ -->
+<div class="bench-strip" aria-label="Workbench navigation">
+  <a class="bench-link" href="/">Main Dashboard</a>
+  <a class="bench-link" href="/double">Double Robot</a>
+  <a class="bench-link active" href="/congruent_surface">Congruent Surface</a>
+  <a class="bench-link" href="/color_sort">Color Sort</a>
+</div>
+<div class="vid">
+  <div class="vid-badges">
+    <span class="badge b-cg"><i class="fas fa-bezier-curve"></i> Congruent Grasp</span>
+    <span class="badge b-math"><i class="fas fa-superscript"></i> K &middot; H &middot; &kappa;&#8321; &middot; &kappa;&#8322;</span>
+    <span class="badge b-nurbs"><i class="fas fa-globe-americas"></i> NURBS / Parametric</span>
+  </div>
+  <img src="/video_feed" alt="Congruent Surface Simulation">
+  <div class="surf-chip" id="surf-chip">
+    <div class="chip-dot" id="chip-dot"></div>
+    <span id="chip-lbl">&#8212;</span>
+  </div>
+  <div class="state-chip">
+    <div class="led"></div>
+    <span id="state-txt">IDLE</span>
+  </div>
+  <div class="sub-wrap">
+    <div class="subtitle" id="subtitle"><span id="sub-txt"></span></div>
+  </div>
+</div>
+
+<!-- ════════════════════ BOTTOM ════════════════════ -->
+<div class="bot">
+  <div class="setup-grid">
+    <div class="setup-card">
+      <div class="setup-k">Planar Cell</div>
+      <div class="setup-v">Normal surface runs a square peg into a square hole with full return-to-slot behavior.</div>
+    </div>
+    <div class="setup-card">
+      <div class="setup-k">Inclined Cell</div>
+      <div class="setup-v">15°, 30°, and 45° setups use cylinder pegs with circular holes and angle-aware insertion.</div>
+    </div>
+    <div class="setup-card">
+      <div class="setup-k">Sculpture Cell</div>
+      <div class="setup-v">Dome / sculpture setup uses a triangle peg with curvature-aware target data and triangle hole geometry.</div>
+    </div>
+  </div>
+  <div class="guide-steps">
+    <div class="guide-step"><b>Surface selector</b><span>Each surface card below launches a different geometric case with its own target alignment behavior.</span></div>
+    <div class="guide-step"><b>Curvature watch</b><span>The math strip highlights how K, H, and principal curvature values shift across the active surface.</span></div>
+    <div class="guide-step"><b>Insertion trace</b><span>Use the state badge, progress bar, and pipeline together to read exactly where the robot is in the motion.</span></div>
+    <div class="guide-step"><b>Reset discipline</b><span>Return the cell to idle before the next case if you want a clean comparison run.</span></div>
+  </div>
+
+  <!-- Status row -->
+  <div class="stat-row">
+    <span class="mode-badge m-idle" id="mode-badge">IDLE</span>
+    <span class="prog-txt" id="prog-txt">&#8212;</span>
+    <div class="prog-bar"><div class="prog-fill" id="prog-fill"></div></div>
+    <div class="stats">
+      <span>Done:&nbsp;<b id="s-done">0</b></span>
+      <span>Failed:&nbsp;<b class="fail" id="s-fail">0</b></span>
+      <span>Total:&nbsp;<b id="s-tot">0</b></span>
+    </div>
+  </div>
+
+  <!-- Curvature math strip -->
+  <div class="math-strip">
+    <div class="mi"><span class="mi-lbl">Gaussian K</span><span class="mi-val zero" id="m-K">&#8212;</span></div>
+    <div class="mdiv"></div>
+    <div class="mi"><span class="mi-lbl">Mean H</span><span class="mi-val zero" id="m-H">&#8212;</span></div>
+    <div class="mdiv"></div>
+    <div class="mi"><span class="mi-lbl">&kappa;&#8321; principal</span><span class="mi-val zero" id="m-k1">&#8212;</span></div>
+    <div class="mdiv"></div>
+    <div class="mi"><span class="mi-lbl">&kappa;&#8322; principal</span><span class="mi-val zero" id="m-k2">&#8212;</span></div>
+    <div class="mdiv"></div>
+    <div class="mi"><span class="mi-lbl">Surface Class</span><span class="mi-val" id="m-cls">&#8212;</span></div>
+    <div class="mdiv"></div>
+    <div class="mi"><span class="mi-lbl">Closure</span><span class="mi-val" id="m-clos">&#8212;</span></div>
+    <div class="mdiv"></div>
+    <div class="mi"><span class="mi-lbl">Stability</span><span class="mi-val zero" id="m-stab">&#8212;</span></div>
+    <div class="mdiv"></div>
+    <div class="mi"><span class="mi-lbl">Conj. Force N</span><span class="mi-val zero" id="m-frc">&#8212;</span></div>
+    <div class="mdiv"></div>
+    <div class="mi"><span class="mi-lbl">Grip Width mm</span><span class="mi-val zero" id="m-wid">&#8212;</span></div>
+    <div class="mdiv"></div>
+    <div class="mi"><span class="mi-lbl">Grasp Quality</span><span class="mi-val zero" id="m-gq">&#8212;</span></div>
+    <div class="mdiv"></div>
+    <div class="mi"><span class="mi-lbl">Angle &deg;</span><span class="mi-val zero" id="m-ang">&#8212;</span></div>
+    <div class="mdiv"></div>
+    <div class="mi"><span class="mi-lbl">Contact Type</span><span class="mi-val" id="m-ct">&#8212;</span></div>
+  </div>
+
+  <!-- Pipeline -->
+  <div class="pipeline">
+    <div class="ps" id="ps-pick"><span class="pi"><i class="fas fa-hand-paper"></i></span>PICK</div>
+    <span class="pa">&rsaquo;</span>
+    <div class="ps" id="ps-grasp"><span class="pi"><i class="fas fa-fist-raised"></i></span>GRASP</div>
+    <span class="pa">&rsaquo;</span>
+    <div class="ps" id="ps-verify"><span class="pi"><i class="fas fa-check-double"></i></span>VERIFY</div>
+    <span class="pa">&rsaquo;</span>
+    <div class="ps" id="ps-lift"><span class="pi"><i class="fas fa-arrow-up"></i></span>LIFT</div>
+    <span class="pa">&rsaquo;</span>
+    <div class="ps" id="ps-scan"><span class="pi"><i class="fas fa-eye"></i></span>SCAN</div>
+    <span class="pa">&rsaquo;</span>
+    <div class="ps" id="ps-approach"><span class="pi"><i class="fas fa-crosshairs"></i></span>APPROACH</div>
+    <span class="pa">&rsaquo;</span>
+    <div class="ps" id="ps-align"><span class="pi"><i class="fas fa-compress-arrows-alt"></i></span>ALIGN</div>
+    <span class="pa">&rsaquo;</span>
+    <div class="ps" id="ps-insert"><span class="pi"><i class="fas fa-arrow-down"></i></span>INSERT</div>
+    <span class="pa">&rsaquo;</span>
+    <div class="ps" id="ps-extract"><span class="pi"><i class="fas fa-level-up-alt"></i></span>EXTRACT</div>
+    <span class="pa">&rsaquo;</span>
+    <div class="ps" id="ps-return"><span class="pi"><i class="fas fa-undo-alt"></i></span>RETURN</div>
+    <span class="pa">&rsaquo;</span>
+    <div class="ps" id="ps-home"><span class="pi"><i class="fas fa-home"></i></span>HOME</div>
+  </div>
+
+  <!-- Surface selector cards -->
+  <div class="surfaces">
+    <div class="sc" id="card-Normal Surface" onclick="launch('Normal Surface')">
+      <div class="sc-ico">&#11035;</div>
+      <div class="sc-body">
+        <div class="sc-name cg">NORMAL</div>
+        <div class="sc-desc">Flat &middot; Square peg &middot; Face contact</div>
+        <div class="sc-curv">K=0 &middot; H=0 &middot; PLANAR</div>
+      </div>
+      <div class="sc-ico-status" id="ico-Normal Surface">&#128336;</div>
+    </div>
+    <div class="sc" id="card-15 DEG" onclick="launch('15 DEG')">
+      <div class="sc-ico">&#128208;</div>
+      <div class="sc-body">
+        <div class="sc-name cy">15&deg; INCLINED</div>
+        <div class="sc-desc">Inclined &middot; Cylinder peg &middot; Line contact</div>
+        <div class="sc-curv">K=0 &middot; CYLINDRICAL &middot; form closure</div>
+      </div>
+      <div class="sc-ico-status" id="ico-15 DEG">&#128336;</div>
+    </div>
+    <div class="sc" id="card-30 DEG" onclick="launch('30 DEG')">
+      <div class="sc-ico">&#128208;</div>
+      <div class="sc-body">
+        <div class="sc-name co">30&deg; INCLINED</div>
+        <div class="sc-desc">Inclined &middot; Cylinder peg &middot; Line contact</div>
+        <div class="sc-curv">K=0 &middot; CYLINDRICAL &middot; force closure</div>
+      </div>
+      <div class="sc-ico-status" id="ico-30 DEG">&#128336;</div>
+    </div>
+    <div class="sc" id="card-45 DEG" onclick="launch('45 DEG')">
+      <div class="sc-ico">&#128208;</div>
+      <div class="sc-body">
+        <div class="sc-name cr">45&deg; INCLINED</div>
+        <div class="sc-desc">High angle &middot; Cylinder peg &middot; Force closure</div>
+        <div class="sc-curv">K=0 &middot; CYLINDRICAL &middot; high tilt</div>
+      </div>
+      <div class="sc-ico-status" id="ico-45 DEG">&#128336;</div>
+    </div>
+    <div class="sc" id="card-DOME" onclick="launch('DOME')">
+      <div class="sc-ico">&#128309;</div>
+      <div class="sc-body">
+        <div class="sc-name cp">SCULPTURE / DOME</div>
+        <div class="sc-desc">Elliptic paraboloid &middot; Triangle peg &middot; triangle cavity</div>
+        <div class="sc-curv">K&gt;0 &middot; ELLIPTIC &middot; full form closure</div>
+      </div>
+      <div class="sc-ico-status" id="ico-DOME">&#128336;</div>
+    </div>
+  </div>
+
+</div><!-- /bot -->
+</div><!-- /layout -->
+
+<script>
+'use strict';
+
+/* ════════════════════════════════════════
+   AUDIO
+════════════════════════════════════════ */
+var isMuted = false, audioCtx = null;
+
+function getCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+function toggleMute() {
+  isMuted = !isMuted;
+  var btn = document.getElementById('btn-mute');
+  var ic  = document.getElementById('mute-ic');
+  var lbl = document.getElementById('mute-lbl');
+  if (isMuted) {
+    btn.classList.add('muted');
+    ic.className  = 'fas fa-volume-mute';
+    lbl.textContent = 'MUTED';
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    _sq = []; _sp = false;
+  } else {
+    btn.classList.remove('muted');
+    ic.className  = 'fas fa-volume-up';
+    lbl.textContent = 'SOUND ON';
+  }
+}
+
+function tn(c, f, t, dur, vol, type) {
+  var o = c.createOscillator(), g = c.createGain();
+  o.type = type || 'sine';
+  o.frequency.setValueAtTime(f, t);
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(vol || 0.15, t + 0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g); g.connect(c.destination);
+  o.start(t); o.stop(t + dur + 0.05);
+}
+
+function playSound(e) {
+  if (isMuted) return;
+  var c = getCtx(), t = c.currentTime;
+  if      (e === 'startup')      { tn(c,300,t,.10,.12); tn(c,500,t+.10,.10,.12); tn(c,800,t+.25,.14,.18); }
+  else if (e === 'success')      { tn(c,523,t,.18,.15); tn(c,659,t+.15,.18,.15); tn(c,784,t+.30,.18,.15); tn(c,1047,t+.45,.22,.25); }
+  else if (e === 'task_complete'){ tn(c,523,t,.20,.18); tn(c,659,t+.20,.20,.18); tn(c,784,t+.40,.20,.18); tn(c,1047,t+.60,.26,.28); }
+  else if (e === 'alert')        { tn(c,800,t,.15,.15,'square'); tn(c,600,t+.2,.15,.15,'square'); }
+  else if (e === 'servo_move')   { tn(c,130,t,.40,.06,'sawtooth'); }
+  else if (e === 'insertion')    { tn(c,175,t,.50,.45,'sawtooth'); }
+  else if (e === 'scan')         { tn(c,880,t,.10,.12); tn(c,1100,t+.14,.10,.12); tn(c,1760,t+.28,.12,.18); }
+  else if (e === 'gripper_close'){ tn(c,1400,t,.07,.10,'square'); tn(c,380,t+.06,.08,.12); }
+  else if (e === 'gripper_open') { tn(c,2200,t,.06,.06,'square'); tn(c,900,t+.05,.07,.10,'triangle'); }
+}
+
+/* ════════════════════════════════════════
+   SPEECH / TTS
+════════════════════════════════════════ */
+var _sq = [], _sp = false, _lastSpk = '', _subTO = null;
+
+function speak(text) {
+  if (isMuted || !text || !('speechSynthesis' in window)) return;
+  if (text === _lastSpk) return;
+  _lastSpk = text;
+  showSub(text);
+  _sq.push(text);
+  procSpeak();
+}
+
+function procSpeak() {
+  if (_sp || _sq.length === 0) return;
+  _sp = true;
+  var u = new SpeechSynthesisUtterance(_sq.shift());
+  u.rate = 1.0; u.pitch = 0.9; u.volume = 0.9;
+  var vs = window.speechSynthesis.getVoices();
+  var pv = vs.find(function(v) { return /en/i.test(v.lang); });
+  if (pv) u.voice = pv;
+  u.onend = u.onerror = function() { _sp = false; procSpeak(); };
+  window.speechSynthesis.speak(u);
+}
+
+function showSub(text) {
+  var el = document.getElementById('subtitle');
+  document.getElementById('sub-txt').textContent = text;
+  el.classList.add('vis');
+  clearTimeout(_subTO);
+  _subTO = setTimeout(function() {
+    el.classList.remove('vis');
+  }, Math.max(3500, text.length * 72));
+}
+
+if (window.speechSynthesis) {
+  window.speechSynthesis.onvoiceschanged = function() {
+    window.speechSynthesis.getVoices();
+  };
+}
+
+/* ════════════════════════════════════════
+   SPEECH EVENTS POLLER
+════════════════════════════════════════ */
+var _spSeq = 0, _snSeq = 0, _pb = false, _speechPrimed = false;
+
+function pollSpeech() {
+  if (_pb) return;
+  _pb = true;
+  fetch('/speech_events?speech_seq=' + _spSeq + '&sound_seq=' + _snSeq)
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (!_speechPrimed) {
+        if (d.speech_seq != null) _spSeq = d.speech_seq;
+        if (d.sound_seq  != null) _snSeq = d.sound_seq;
+        _speechPrimed = true;
+        return;
+      }
+      if (d.speech_seq != null) _spSeq = d.speech_seq;
+      if (d.sound_seq  != null) _snSeq = d.sound_seq;
+      (d.speeches || []).forEach(function(s) { speak(s.text); });
+      (d.sounds   || []).forEach(function(s) { playSound(s.effect); });
+    })
+    .catch(function() {})
+    .finally(function() { _pb = false; });
+}
+
+/* ════════════════════════════════════════
+   SURFACE COMMANDS
+════════════════════════════════════════ */
+var activeSurf = null, doneSurfs = {}, prevDone = 0;
+var SURF_LABELS = {
+  'Normal Surface': 'NORMAL SURFACE',
+  '15 DEG': '15 DEG',
+  '30 DEG': '30 DEG',
+  '45 DEG': '45 DEG',
+  'DOME': 'SCULPTURE SURFACE'
+};
+
+var SURF_CLR = {
+  'Normal Surface': '#00ff88',
+  '15 DEG':         '#ffcc00',
+  '30 DEG':         '#ff9f43',
+  '45 DEG':         '#ff6b4a',
+  'DOME':           '#cc66ff'
+};
+
+function launch(name) {
+  getCtx(); // unlock audio on first user gesture
+  fetch('/command/' + encodeURIComponent(name), { method: 'POST' })
+    .then(function() {
+      activeSurf = name;
+      renderCards();
+      var dot = document.getElementById('chip-dot');
+      var lbl = document.getElementById('chip-lbl');
+      var chp = document.getElementById('surf-chip');
+      dot.style.background = SURF_CLR[name] || '#fff';
+      lbl.textContent      = SURF_LABELS[name] || name.toUpperCase();
+      lbl.style.color      = SURF_CLR[name] || '#fff';
+      chp.classList.add('vis');
+      playSound('startup');
+      speak('Congruent surface task started: ' + name);
+    })
+    .catch(function() {});
+}
+
+function doReset() {
+  fetch('/command/RESET', { method: 'POST' });
+  activeSurf = null;
+  document.getElementById('surf-chip').classList.remove('vis');
+  renderCards();
+}
+
+function openGuide() {
+  document.getElementById('cg-guide').classList.add('show');
+}
+
+function closeGuide(evt) {
+  if (!evt || evt.target === document.getElementById('cg-guide')) {
+    document.getElementById('cg-guide').classList.remove('show');
+  }
+}
+
+function renderCards() {
+  var surfs = ['Normal Surface', '15 DEG', '30 DEG', '45 DEG', 'DOME'];
+  surfs.forEach(function(s) {
+    var card = document.getElementById('card-' + s);
+    var ico  = document.getElementById('ico-' + s);
+    if (!card || !ico) return;
+    card.classList.remove('s-act', 's-done');
+    if (s === activeSurf) {
+      card.classList.add('s-act');
+      ico.innerHTML = '<i class="fas fa-cog fa-spin" style="color:#00ff96;font-size:0.82rem"></i>';
+    } else if (doneSurfs[s]) {
+      card.classList.add('s-done');
+      ico.innerHTML = '<i class="fas fa-check-circle" style="color:#00d4ff;font-size:0.82rem"></i>';
+    } else {
+      ico.textContent = '\u{1F550}';
+    }
+  });
+}
+
+/* ════════════════════════════════════════
+   FSM → PIPELINE MAP
+════════════════════════════════════════ */
+var SM = {
+  'PICK_APPROACH':          'ps-pick',
+  'PICK_DOWN':              'ps-pick',
+  'GRASP':                  'ps-grasp',
+  'REGRASP':                'ps-grasp',
+  'VERIFY_GRASP':           'ps-verify',
+  'LIFT':                   'ps-lift',
+  'SCAN_APPROACH':          'ps-scan',
+  'SCAN':                   'ps-scan',
+  'INSERT_APPROACH':        'ps-approach',
+  'INSERT_ALIGN':           'ps-align',
+  'INSERT_PUSH':            'ps-insert',
+  'EXTRACT':                'ps-extract',
+  'RETURN_TO_PICK':         'ps-return',
+  'RELEASE':                'ps-home',
+  'GO_HOME':                'ps-home',
+  'PEG_RECOVERY_APPROACH':  'ps-lift',
+  'PEG_RECOVERY_GRASP':     'ps-grasp',
+  'PEG_RECOVERY_LIFT':      'ps-lift',
+};
+
+var SO = [
+  'ps-pick','ps-grasp','ps-verify','ps-lift',
+  'ps-scan','ps-approach','ps-align','ps-insert',
+  'ps-extract','ps-return','ps-home'
+];
+
+function renderPipe(state) {
+  var act = SM[state] || null;
+  var ai  = act ? SO.indexOf(act) : -1;
+  var run = (state !== 'IDLE');
+  SO.forEach(function(sid, idx) {
+    var el = document.getElementById(sid);
+    if (!el) return;
+    el.classList.remove('act', 'done');
+    if (run) {
+      if (sid === act)                       el.classList.add('act');
+      else if (ai >= 0 && idx < ai)          el.classList.add('done');
+    }
+  });
+}
+
+/* ════════════════════════════════════════
+   MATH STRIP HELPER
+════════════════════════════════════════ */
+function setM(id, txt, numVal) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = (txt != null) ? String(txt) : '\u2014';
+  el.className   = 'mi-val';
+  if (numVal != null) {
+    if      (numVal >  0.00005) el.classList.add('pos');
+    else if (numVal < -0.00005) el.classList.add('neg');
+    else                        el.classList.add('zero');
+  } else {
+    el.classList.add('zero');
+  }
+}
+
+/* ════════════════════════════════════════
+   MAIN POLL
+════════════════════════════════════════ */
+function poll() {
+  /* /status */
+  fetch('/status')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      var state = d.state || 'IDLE';
+      document.getElementById('state-txt').textContent = state;
+
+      /* mode badge */
+      var badge = document.getElementById('mode-badge');
+      if (state === 'IDLE') {
+        badge.textContent = 'IDLE';
+        badge.className   = 'mode-badge m-idle';
+      } else if (state === 'GO_HOME' || state === 'RELEASE' || state === 'RETURN_TO_PICK') {
+        badge.textContent = 'COMPLETING';
+        badge.className   = 'mode-badge m-done';
+      } else {
+        badge.textContent = 'ACTIVE';
+        badge.className   = 'mode-badge m-act';
+      }
+
+      /* task stats */
+      var ts   = d.task_stats || {};
+      var done = ts.completed || 0;
+      var fail = ts.failed    || 0;
+      var tot  = ts.total     || 0;
+      document.getElementById('s-done').textContent = done;
+      document.getElementById('s-fail').textContent = fail;
+      document.getElementById('s-tot').textContent  = tot;
+      document.getElementById('prog-txt').textContent =
+        tot > 0 ? (done + ' / ' + tot) : '\u2014';
+      document.getElementById('prog-fill').style.width =
+        tot > 0 ? ((done / tot) * 100).toFixed(1) + '%' : '0%';
+
+      /* completion tracking */
+      if (done > prevDone && activeSurf) {
+        doneSurfs[activeSurf] = true;
+        playSound('success');
+        speak('Task complete! Peg inserted successfully.');
+      }
+      prevDone = done;
+      renderCards();
+      renderPipe(state);
+
+      /* math strip from /status */
+      var K = d.curvature_K, H = d.curvature_H;
+      setM('m-K',    K != null ? K.toFixed(6) : null, K);
+      setM('m-H',    H != null ? H.toFixed(6) : null, H);
+      setM('m-cls',  d.surface_type   ? d.surface_type.toUpperCase()  : null, null);
+      setM('m-clos', d.conj_closure   || null, null);
+      setM('m-frc',  d.conj_force  != null ? d.conj_force  + ' N'  : null, d.conj_force);
+      setM('m-wid',  d.conj_width  != null ? d.conj_width  + ' mm' : null, d.conj_width);
+      setM('m-ang',  d.conj_angle  != null ? d.conj_angle  + '\u00b0' : null, null);
+      setM('m-ct',   d.conj_contact || null, null);
+
+      /* grasp quality */
+      var gq = d.grasp_quality || {};
+      if (gq.quality_score != null) {
+        var pct = Math.round(gq.quality_score * 100);
+        setM('m-gq', pct + '%', gq.quality_score - 0.5);
+      } else {
+        setM('m-gq', null, null);
+      }
+
+      /* all tasks done → celebrate */
+      if (state === 'IDLE' && activeSurf && done > 0 && done === tot) {
+        playSound('task_complete');
+        speak('All tasks complete. System returning home.');
+        activeSurf = null;
+        document.getElementById('surf-chip').classList.remove('vis');
+      }
+    })
+    .catch(function() {
+      document.getElementById('state-txt').textContent = 'OFFLINE';
+    });
+
+  /* /telemetry for k1, k2, stability */
+  fetch('/telemetry')
+    .then(function(r) { return r.json(); })
+    .then(function(td) {
+      if (!td || td.error) return;
+      var ts = td.target_surface;
+      if (!ts) return;
+      var dg = ts.differential_geometry || {};
+      var ca = ts.conjugate_analysis    || {};
+      setM('m-k1',
+        dg.principal_curvature_k1 != null ? dg.principal_curvature_k1.toFixed(5) : null,
+        dg.principal_curvature_k1);
+      setM('m-k2',
+        dg.principal_curvature_k2 != null ? dg.principal_curvature_k2.toFixed(5) : null,
+        dg.principal_curvature_k2);
+      setM('m-stab',
+        ca.stability_metric != null ? (ca.stability_metric * 100).toFixed(0) + '%' : null,
+        ca.stability_metric != null ? ca.stability_metric - 0.5 : null);
+    })
+    .catch(function() {});
+}
+
+/* ════════════════════════════════════════
+   INIT
+════════════════════════════════════════ */
+setInterval(poll,        120);
+setInterval(pollSpeech,  280);
+poll();
+document.addEventListener('keydown', function(event) {
+  if (event.key === 'Escape') closeGuide();
+});
+</script>
+<script>
+window.ARIA_WIDGET_CONTEXT = {
+  page_name: 'Congruent Surface Workbench',
+  hint: 'Use the bottom surface cards as task launch buttons for congruent grasp experiments.',
+  instructions: 'Choose one surface card, monitor the geometry strip and pipeline, then reset before trying another surface if needed.'
+};
+window.ARIA_WIDGET_FEED_SELECTOR = '.vid img';
+</script>
+<script src="{{ url_for('static', filename='aria_widget.js') }}"></script>
+</body>
+</html>

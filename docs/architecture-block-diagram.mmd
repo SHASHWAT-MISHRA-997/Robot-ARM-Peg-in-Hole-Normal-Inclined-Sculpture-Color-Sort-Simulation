@@ -1,0 +1,40 @@
+flowchart LR
+    subgraph UI["Flask Web UI"]
+        A["Main Dashboard"]
+        B["Double Workbench"]
+        C["Color Sort"]
+        D["Congruent Surface"]
+        E["ARIA AI Widget"]
+    end
+
+    subgraph API["Flask Routes"]
+        F["/command/<task>"]
+        G["/status and telemetry"]
+        H["/video_feed"]
+        I["/assistant/chat"]
+        J["/download_report"]
+    end
+
+    subgraph Core["Simulation Core"]
+        K["SimulationEngine"]
+        L["RobotController"]
+        M["Environment Builder"]
+        N["Vision System"]
+        O["Sculptured Surface Math"]
+    end
+
+    subgraph Outputs["Outputs"]
+        P["Live camera frames"]
+        Q["Task snapshots"]
+        R["Performance metrics"]
+        S["JSON, TXT, HTML, PDF, DOC reports"]
+    end
+
+    A --> API
+    B --> API
+    C --> API
+    D --> API
+    E --> I
+    API --> Core
+    Core --> Outputs
+    Outputs --> UI

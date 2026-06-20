@@ -1,0 +1,25 @@
+/* Styles for fixed analysis button */
+#fixed-analysis-btn {
+    position: fixed;
+    top: 18px;
+    right: 18px;
+    z-index: 2000;
+    background: linear-gradient(90deg, #cc66ff, #00d4ff);
+    color: #fff;
+    font-weight: bold;
+    padding: 12px 22px;
+    border-radius: 8px;
+    border: 2px solid #cc66ff;
+    box-shadow: 0 2px 12px rgba(0,212,255,0.15);
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+/* Styles for analysis button */
+.btn-analysis {
+    background: linear-gradient(90deg, #cc66ff, #00d4ff);
+    color: #fff;
+    font-weight: bold;
+    margin-bottom: 8px;
+    border: 2px solid #cc66ff;
+}

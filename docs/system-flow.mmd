@@ -1,0 +1,21 @@
+flowchart TD
+    A["Operator selects workbench or task"] --> B{"Workbench mode"}
+    B --> C["Main simulation dashboard"]
+    B --> D["Double robot workbench"]
+    B --> E["Color sort workbench"]
+    B --> F["Congruent surface workbench"]
+
+    C --> C1["Surface task: normal, 15 deg, 30 deg, 45 deg, sculpture"]
+    C1 --> G["PyBullet simulation engine"]
+    D --> D1["Robot 1 and Robot 2 task assignment"]
+    D1 --> G
+    E --> E1["Vision detects color and routes target zone"]
+    E1 --> G
+    F --> F1["Curvature and conjugate grasp analysis"]
+    F1 --> G
+
+    G --> H["Finite-state robot execution"]
+    H --> I["Pick, grasp, lift, align, insert, release, return home"]
+    I --> J["Telemetry, force, torque, slip, grasp quality"]
+    J --> K["Live Flask dashboard and reports"]
+    K --> L["ARIA AI assistant answers simulation and general questions"]
